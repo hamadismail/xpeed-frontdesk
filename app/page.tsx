@@ -26,25 +26,19 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { AddRoomDialog } from "./addroom/addRoomDialog";
+import { useQuery } from "@tanstack/react-query";
+import axios from 'axios';
+import { Types } from "mongoose";
 
 type RoomType = "Single" | "Twin" | "Queen" | "Suite";
 
 type Room = {
-  id: number;
-  name: string;
-  floor: number;
-  type: RoomType;
-  status: "available" | "occupied";
+ _id: Types.ObjectId;
+  roomFloor: number;
+  roomType: RoomType;
+  isBooked: boolean;
 };
-
-const allRooms: Room[] = [
-  { id: 1, name: "Room 101", floor: 1, type: "Single", status: "available" },
-  { id: 2, name: "Room 102", floor: 1, type: "Queen", status: "occupied" },
-  { id: 3, name: "Room 201", floor: 2, type: "Twin", status: "available" },
-  { id: 4, name: "Room 202", floor: 2, type: "Single", status: "occupied" },
-  { id: 5, name: "Room 301", floor: 3, type: "Suite", status: "available" },
-  { id: 6, name: "Room 302", floor: 3, type: "Queen", status: "occupied" },
-];
 
 const getRoomIcon = (type: RoomType) => {
   switch (type) {
@@ -65,17 +59,48 @@ export default function AllRooms() {
   const [floorFilter, setFloorFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState<RoomType | "all">("all");
 
+  const { data: allRooms = [], isLoading } = useQuery<Room[]>({
+    queryKey: ["rooms"],
+    queryFn: () => axios.get("/api/rooms").then((res) => res.data),
+  });
+
   const filteredRooms = allRooms.filter((room) => {
     return (
-      (floorFilter === "all" || room.floor.toString() === floorFilter) &&
-      (typeFilter === "all" || room.type === typeFilter)
+      (floorFilter === "all" || room.roomFloor.toString() === floorFilter) &&
+      (typeFilter === "all" || room.roomType === typeFilter)
     );
   });
 
   const occupiedCount = allRooms.filter(
-    (room) => room.status === "occupied"
+    (room) => room.isBooked === true
   ).length;
   const availableCount = allRooms.length - occupiedCount;
+
+if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <div className="relative">
+          {/* Animated spinner */}
+          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+
+          {/* Hotel icon that rotates opposite direction */}
+          <Hotel className="absolute inset-0 m-auto h-8 w-8 text-primary animate-spin-reverse" />
+        </div>
+
+        <p className="text-lg font-medium text-muted-foreground">
+          Loading rooms...
+        </p>
+
+        {/* Optional progress dots */}
+        <div className="flex gap-1 mt-2">
+          <div className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '0ms' }} />
+          <div className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '150ms' }} />
+          <div className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '300ms' }} />
+        </div>
+      </div>
+    );
+  }
+
 
   return (
     <div className="space-y-6 p-6">
@@ -161,6 +186,10 @@ export default function AllRooms() {
             </SelectContent>
           </Select>
         </div>
+
+        <div className="flex items-end">
+          <AddRoomDialog />
+        </div>
       </div>
 
       {/* Rooms Grid */}
@@ -182,37 +211,37 @@ export default function AllRooms() {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {filteredRooms.map((room) => (
             <Card
-              key={room.id}
+              key={room._id.toString()}
               className={`p-4 transition-all hover:shadow-lg ${
-                room.status === "available"
+                room.isBooked === false
                   ? "border-green-200 dark:border-green-900"
                   : "border-red-200 dark:border-red-900"
               }`}
             >
               <div className="flex justify-between items-start mb-2">
                 <h3 className="text-lg font-semibold flex items-center gap-2">
-                  {getRoomIcon(room.type)}
-                  {room.name}
+                  {getRoomIcon(room.roomType)}
+                  {room.roomType}
                 </h3>
                 <Badge
                   variant={
-                    room.status === "available" ? "default" : "destructive"
+                    room.isBooked === false ? "default" : "destructive"
                   }
                   className="flex items-center gap-1"
                 >
                   <Circle className="h-2 w-2 fill-current" />
-                  {room.status.charAt(0).toUpperCase() + room.status.slice(1)}
+                  {room.isBooked ? 'Occupied' : 'Available'}
                 </Badge>
               </div>
 
               <div className="grid grid-cols-2 gap-2 mb-4 text-sm">
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Home className="h-4 w-4" />
-                  <span>Floor {room.floor}</span>
+                  <span>Floor {room.roomFloor}</span>
                 </div>
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <span>Type:</span>
-                  <span className="font-medium">{room.type}</span>
+                  <span className="font-medium">{room.roomType}</span>
                 </div>
               </div>
 
@@ -221,7 +250,7 @@ export default function AllRooms() {
                   <Info className="h-4 w-4 mr-1" />
                   Info
                 </Button>
-                {room.status === "available" ? (
+                {room.isBooked === false ? (
                   <Button size="sm" className="h-8 px-3">
                     <CalendarCheck className="h-4 w-4 mr-1" />
                     Book

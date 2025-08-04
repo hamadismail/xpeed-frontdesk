@@ -27,7 +27,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const navLinks = [
   { label: "All Rooms", href: "/", icon: <Hotel className="h-5 w-5" /> },
-  { label: "Add Rooms", href: "/addroom", icon: <HousePlus className="h-5 w-5" /> },
   {
     label: "Dashboard",
     href: "/dashboard",
@@ -109,7 +108,7 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-4 border-t">
+      {/* <SidebarFooter className="p-4 border-t">
         <div className="flex items-center gap-3">
           <Avatar className="h-9 w-9">
             <AvatarImage src="/avatars/admin.png" />
@@ -125,7 +124,7 @@ export function AppSidebar() {
             <LogOut className="h-4 w-4" />
           </Button>
         </div>
-      </SidebarFooter>
+      </SidebarFooter> */}
     </Sidebar>
   );
 }
