@@ -16,7 +16,6 @@ import {
   Hotel,
   Crown,
   Info,
-  CalendarCheck,
   RotateCcw,
   Home,
   Layers,
@@ -31,13 +30,14 @@ import BookRoomDialog from "./components/BookRoomDialog";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { Types } from "mongoose";
+import { RoomType } from "@/models/room.model";
 
-type RoomType = "Single" | "Twin" | "Queen" | "Suite";
 
 type Room = {
   _id: Types.ObjectId;
-  roomFloor: number;
+  roomFloor: string;
   roomType: RoomType;
+  roomNo: string;
   isBooked: boolean;
 };
 
@@ -75,6 +75,7 @@ export default function AllRooms() {
   const occupiedCount = allRooms.filter(
     (room) => room.isBooked === true
   ).length;
+
   const availableCount = allRooms.length - occupiedCount;
 
   if (isLoading) {
@@ -217,7 +218,7 @@ export default function AllRooms() {
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filteredRooms.map((room) => (
             <Card
               key={room._id.toString()}
@@ -230,7 +231,7 @@ export default function AllRooms() {
               <div className="flex justify-between items-start mb-2">
                 <h3 className="text-lg font-semibold flex items-center gap-2">
                   {getRoomIcon(room.roomType)}
-                  {room.roomType}
+                  {room.roomNo}
                 </h3>
                 <Badge
                   variant={room.isBooked === false ? "default" : "destructive"}
@@ -258,7 +259,7 @@ export default function AllRooms() {
                   Info
                 </Button>
                 {room.isBooked === false ? (
-                  <BookRoomDialog roomId={room._id.toString()} />
+                  <BookRoomDialog room={room} />
                 ) : (
                   <Button variant="secondary" size="sm" className="h-8 px-3">
                     <RotateCcw className="h-4 w-4 mr-1" />

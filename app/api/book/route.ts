@@ -1,28 +1,29 @@
-import { NextRequest, NextResponse } from "next/server";
+"use server"
 import { connectDB } from "@/lib/mongoose";
+import { Book } from "@/models/book.model";
 import { Room } from "@/models/room.model";
-import { Guest } from "@/models/guest.model";
+import { NextRequest, NextResponse } from "next/server";
 
-// POST /api/guest
 export async function POST(req: NextRequest) {
   try {
     await connectDB();
 
-    const { roomId, guestName, guestPhone } = await req.json();
+    const body = await req.json();
+    const { bookingInfo } = body;
+    const { roomId, guest, stay, payment } = bookingInfo;
 
-    if (!roomId || !guestName || !guestPhone) {
+    // Validate required fields
+    if (!roomId || !guest?.name || !guest?.phone) {
       return NextResponse.json(
-        { message: "Missing required fields" },
+        { message: "Missing required fields (roomId, name, or phone)" },
         { status: 400 }
       );
     }
 
     const room = await Room.findById(roomId);
-
     if (!room) {
       return NextResponse.json({ message: "Room not found" }, { status: 404 });
     }
-
     if (room.isBooked) {
       return NextResponse.json(
         { message: "Room already booked" },
@@ -30,24 +31,23 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Create guest record
-    const guest = await Guest.create({
-      name: guestName,
-      phone: guestPhone,
-      room: roomId,
-      checkInDate: new Date(),
+    const newBooking = await Book.create({
+      guest,
+      stay,
+      payment,
+      roomId,
     });
 
-    // Update room status
+    // Mark room as booked
     room.isBooked = true;
     await room.save();
 
     return NextResponse.json(
-      { message: "Room booked", guest },
+      { message: "Room booked successfully", booking: newBooking },
       { status: 201 }
     );
   } catch (error) {
-    console.error("Error booking guest:", error);
+    console.error("Error booking room:", error);
     return NextResponse.json(
       { message: "Server error while booking room" },
       { status: 500 }

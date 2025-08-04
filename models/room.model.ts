@@ -1,9 +1,16 @@
-import { Schema, Document, model, models } from "mongoose";
+import { Schema, model, models, Types } from "mongoose";
 
-export interface IRoom extends Document {
-  // _id: Types.ObjectId;
+export enum RoomType {
+  SINGLE = "Single",
+  TWIN = "Twin",
+  QUEEN = "Queen",
+  SUITE = "Suite",
+}
+
+export interface IRoom {
+  _id?: Types.ObjectId;
   roomNo: string;
-  roomType: string;
+  roomType: RoomType;
   roomFloor: string;
   isBooked: boolean;
 }
@@ -11,7 +18,7 @@ export interface IRoom extends Document {
 const RoomSchema = new Schema<IRoom>(
   {
     roomNo: { type: String, required: true },
-    roomType: { type: String, required: true },
+    roomType: { type: String, enum: Object.values(RoomType), required: true },
     roomFloor: { type: String, required: true },
     isBooked: { type: Boolean, default: false },
   },
