@@ -21,7 +21,7 @@ import {
 import { BedSingle, BedDouble, Crown, Hotel, Plus } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { createRoom } from "./actions";
+import { createRoom } from "../addroom/actions";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 type RoomType = "Single" | "Twin" | "Queen" | "Suite";
@@ -33,7 +33,7 @@ type RoomData = {
   roomFloor: string;
 };
 
-export function AddRoomDialog() {
+export default function AddRoomDialog() {
   const [open, setOpen] = useState(false);
   // const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -51,7 +51,7 @@ export function AddRoomDialog() {
       setFormData({ roomNo: "", roomType: "Single", roomFloor: "1" });
       setOpen(false);
     },
-    onError: (error: any) => {
+    onError: (error) => {
       toast.error("Failed to add room", {
         description: error?.message || "Something went wrong",
       });

@@ -1,6 +1,6 @@
 // lib/db.ts
 import { connectDB } from "./mongoose";
-import { Room } from "@/app/models/Room";
+import { Room } from "@/models/room.model";
 
 export async function getRooms() {
   await connectDB();

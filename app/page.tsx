@@ -26,15 +26,16 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { AddRoomDialog } from "./addroom/addRoomDialog";
+import AddRoomDialog from "./components/AddRoomDialog";
+import BookRoomDialog from "./components/BookRoomDialog";
 import { useQuery } from "@tanstack/react-query";
-import axios from 'axios';
+import axios from "axios";
 import { Types } from "mongoose";
 
 type RoomType = "Single" | "Twin" | "Queen" | "Suite";
 
 type Room = {
- _id: Types.ObjectId;
+  _id: Types.ObjectId;
   roomFloor: number;
   roomType: RoomType;
   isBooked: boolean;
@@ -76,7 +77,7 @@ export default function AllRooms() {
   ).length;
   const availableCount = allRooms.length - occupiedCount;
 
-if (isLoading) {
+  if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
         <div className="relative">
@@ -93,14 +94,22 @@ if (isLoading) {
 
         {/* Optional progress dots */}
         <div className="flex gap-1 mt-2">
-          <div className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '0ms' }} />
-          <div className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '150ms' }} />
-          <div className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '300ms' }} />
+          <div
+            className="w-2 h-2 rounded-full bg-primary animate-bounce"
+            style={{ animationDelay: "0ms" }}
+          />
+          <div
+            className="w-2 h-2 rounded-full bg-primary animate-bounce"
+            style={{ animationDelay: "150ms" }}
+          />
+          <div
+            className="w-2 h-2 rounded-full bg-primary animate-bounce"
+            style={{ animationDelay: "300ms" }}
+          />
         </div>
       </div>
     );
   }
-
 
   return (
     <div className="space-y-6 p-6">
@@ -224,13 +233,11 @@ if (isLoading) {
                   {room.roomType}
                 </h3>
                 <Badge
-                  variant={
-                    room.isBooked === false ? "default" : "destructive"
-                  }
+                  variant={room.isBooked === false ? "default" : "destructive"}
                   className="flex items-center gap-1"
                 >
                   <Circle className="h-2 w-2 fill-current" />
-                  {room.isBooked ? 'Occupied' : 'Available'}
+                  {room.isBooked ? "Occupied" : "Available"}
                 </Badge>
               </div>
 
@@ -251,10 +258,7 @@ if (isLoading) {
                   Info
                 </Button>
                 {room.isBooked === false ? (
-                  <Button size="sm" className="h-8 px-3">
-                    <CalendarCheck className="h-4 w-4 mr-1" />
-                    Book
-                  </Button>
+                  <BookRoomDialog roomId={room._id.toString()} />
                 ) : (
                   <Button variant="secondary" size="sm" className="h-8 px-3">
                     <RotateCcw className="h-4 w-4 mr-1" />
