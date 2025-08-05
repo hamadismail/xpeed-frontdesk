@@ -43,3 +43,24 @@ export async function createRoom(payload: RoomData): Promise<{
     };
   }
 }
+
+export async function releaseRoom(roomId: string): Promise<{
+  success: boolean;
+  data?: null;
+  error?: string;
+}> {
+  try {
+    await connectDB();
+    await Room.findByIdAndUpdate(roomId, { isBooked: false });
+
+    return {
+      success: true,
+      data: null
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to release room",
+    };
+  }
+}

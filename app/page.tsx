@@ -16,7 +16,6 @@ import {
   Hotel,
   Crown,
   Info,
-  RotateCcw,
   Home,
   Layers,
   Circle,
@@ -31,7 +30,7 @@ import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { Types } from "mongoose";
 import { RoomType } from "@/models/room.model";
-
+import ReleaseRoomButton from "./components/ReleaseRoomButton";
 
 type Room = {
   _id: Types.ObjectId;
@@ -261,10 +260,9 @@ export default function AllRooms() {
                 {room.isBooked === false ? (
                   <BookRoomDialog room={room} />
                 ) : (
-                  <Button variant="secondary" size="sm" className="h-8 px-3">
-                    <RotateCcw className="h-4 w-4 mr-1" />
-                    Release
-                  </Button>
+                  <ReleaseRoomButton
+                    roomId={room._id.toString()}
+                  />
                 )}
               </div>
             </Card>

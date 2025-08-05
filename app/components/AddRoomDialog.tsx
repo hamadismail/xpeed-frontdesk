@@ -21,7 +21,7 @@ import {
 import { BedSingle, BedDouble, Crown, Hotel, Plus } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { createRoom } from "../addroom/actions";
+import { createRoom } from "../roomActions/actions";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 type RoomType = "Single" | "Twin" | "Queen" | "Suite";
