@@ -36,6 +36,14 @@ import {
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import { Invoice } from "./Invoice";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { GUEST_STATUS, OTAS, PAYMENT_METHOD } from "@/models/book.model";
 
 const getRoomIcon = (type: RoomType) => {
   switch (type) {
@@ -65,7 +73,9 @@ export default function BookRoomDialog({ room }: { room: IRoom }) {
     country: "",
     passport: "",
     ic: "",
-    ota: "",
+    otas: OTAS.DEFAULT,
+    refId: "",
+    status: GUEST_STATUS.CHECKED_IN,
   });
 
   const [stayInfo, setStayInfo] = useState({
@@ -81,7 +91,8 @@ export default function BookRoomDialog({ room }: { room: IRoom }) {
     tourismTax: "",
     discount: "",
     paidAmount: "",
-    paymentMethod: "cash",
+    paymentMethod: PAYMENT_METHOD.CASH,
+    remarks: "",
   });
 
   const { mutate: bookRoom, isPending } = useMutation({
@@ -121,7 +132,9 @@ export default function BookRoomDialog({ room }: { room: IRoom }) {
       country: "",
       passport: "",
       ic: "",
-      ota: "",
+      otas: OTAS.DEFAULT,
+      refId: "",
+      status: GUEST_STATUS.CHECKED_IN,
     });
     setStayInfo({
       arrival: undefined,
@@ -135,13 +148,17 @@ export default function BookRoomDialog({ room }: { room: IRoom }) {
       tourismTax: "",
       discount: "",
       paidAmount: "",
-      paymentMethod: "cash",
+      paymentMethod: PAYMENT_METHOD.CASH,
+      remarks: "",
     });
     setStep(1);
   };
 
   const handleNext = () => {
-    if (step === 1 && (!guestInfo.name || !guestInfo.phone)) {
+    if (
+      step === 1 &&
+      (!guestInfo.name || !guestInfo.phone || !guestInfo.refId)
+    ) {
       toast.warning("Please fill in required guest information");
       return;
     }
@@ -152,7 +169,12 @@ export default function BookRoomDialog({ room }: { room: IRoom }) {
       toast.warning("Please select arrival and departure dates");
       return;
     }
-    if (step === 3 && (!paymentInfo.roomPrice || !paymentInfo.paidAmount)) {
+    if (
+      step === 3 &&
+      (!paymentInfo.roomPrice ||
+        !paymentInfo.paidAmount ||
+        !paymentInfo.remarks)
+    ) {
       toast.warning("Please enter room price");
       return;
     }
@@ -297,14 +319,35 @@ export default function BookRoomDialog({ room }: { room: IRoom }) {
                 />
               </div>
               <div className="space-y-2">
-                <Label>OTA/Reference</Label>
+                <Label>Reference Id *</Label>
                 <Input
-                  value={guestInfo.ota}
+                  value={guestInfo.refId}
                   onChange={(e) =>
-                    setGuestInfo({ ...guestInfo, ota: e.target.value })
+                    setGuestInfo({ ...guestInfo, refId: e.target.value })
                   }
-                  placeholder="Booking.com"
+                  placeholder="Type Reference Id"
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label>OTA/Reference</Label>
+                <Select
+                  value={guestInfo.otas}
+                  onValueChange={(value) =>
+                    setGuestInfo({ ...guestInfo, otas: value as OTAS })
+                  }
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select OTA/Reference" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.values(OTAS).map((ota) => (
+                      <SelectItem key={ota} value={ota}>
+                        {ota}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
@@ -324,7 +367,7 @@ export default function BookRoomDialog({ room }: { room: IRoom }) {
           <div className="grid gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Arrival Date *</Label>
+                <Label>Checked In *</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
@@ -342,7 +385,7 @@ export default function BookRoomDialog({ room }: { room: IRoom }) {
                       )}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 max-h-[250px] overflow-auto">
+                  <PopoverContent className="w-auto p-0 max-h-[280px] overflow-auto">
                     <DatePicker
                       mode="single"
                       selected={stayInfo.arrival}
@@ -357,7 +400,7 @@ export default function BookRoomDialog({ room }: { room: IRoom }) {
               </div>
 
               <div className="space-y-2">
-                <Label>Departure Date *</Label>
+                <Label>Checked Out *</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
@@ -375,7 +418,7 @@ export default function BookRoomDialog({ room }: { room: IRoom }) {
                       )}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 max-h-[250px] overflow-auto">
+                  <PopoverContent className="w-auto p-0 max-h-[280px] overflow-auto">
                     <DatePicker
                       mode="single"
                       selected={stayInfo.departure}
@@ -504,7 +547,7 @@ export default function BookRoomDialog({ room }: { room: IRoom }) {
               </div>
 
               <div className="space-y-2">
-                <Label>Paid Amount</Label>
+                <Label>Paid Amount *</Label>
                 <Input
                   type="number"
                   value={paymentInfo.paidAmount}
@@ -519,63 +562,59 @@ export default function BookRoomDialog({ room }: { room: IRoom }) {
               </div>
 
               <div className="space-y-2">
-                <Label>Due Amount</Label>
-                {/* <Input type="number" readOnly value= /> */}
-                <h5 className="p-2">{calculateDue() || 0}</h5>
+                <Label>Remarks *</Label>
+                <Input
+                  type="text"
+                  value={paymentInfo.remarks}
+                  onChange={(e) =>
+                    setPaymentInfo({
+                      ...paymentInfo,
+                      remarks: e.target.value,
+                    })
+                  }
+                  placeholder="Type remarks"
+                />
               </div>
+
+              {/* <div className="space-y-2">
+                <Label>Due Amount</Label>
+                <Input type="number" readOnly value= />
+                <h5 className="p-2">{calculateDue() || 0}</h5>
+              </div> */}
 
               <div className="space-y-2 col-span-2">
                 <Label>Payment Method</Label>
                 <div className="flex gap-4">
-                  <Button
-                    variant={
-                      paymentInfo.paymentMethod === "cash"
-                        ? "default"
-                        : "outline"
-                    }
-                    onClick={() =>
-                      setPaymentInfo({ ...paymentInfo, paymentMethod: "cash" })
-                    }
-                  >
-                    Cash
-                  </Button>
-                  <Button
-                    variant={
-                      paymentInfo.paymentMethod === "card"
-                        ? "default"
-                        : "outline"
-                    }
-                    onClick={() =>
-                      setPaymentInfo({ ...paymentInfo, paymentMethod: "card" })
-                    }
-                  >
-                    Credit Card
-                  </Button>
-                  <Button
-                    variant={
-                      paymentInfo.paymentMethod === "transfer"
-                        ? "default"
-                        : "outline"
-                    }
-                    onClick={() =>
-                      setPaymentInfo({
-                        ...paymentInfo,
-                        paymentMethod: "transfer",
-                      })
-                    }
-                  >
-                    Bank Transfer
-                  </Button>
+                  {Object.values(PAYMENT_METHOD).map((method) => (
+                    <Button
+                      key={method}
+                      variant={
+                        paymentInfo.paymentMethod === method
+                          ? "default"
+                          : "outline"
+                      }
+                      onClick={() =>
+                        setPaymentInfo({
+                          ...paymentInfo,
+                          paymentMethod: method,
+                        })
+                      }
+                    >
+                      {method}
+                    </Button>
+                  ))}
                 </div>
               </div>
             </div>
 
             <div className="bg-muted/50 p-3 rounded-lg">
               <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Room Price:</span>
+                <span className="text-sm text-muted-foreground">
+                  Room Price:
+                </span>
                 <span className="font-medium">
                   RM{" "}
-                  {(parseFloat(paymentInfo.roomPrice) || 1) * calculateNights()}
+                  {(parseFloat(paymentInfo.roomPrice) || 0) * calculateNights()}
                 </span>
               </div>
               {paymentInfo.sst && (
