@@ -196,7 +196,7 @@ export default function BookRoomDialog({ room }: { room: IRoom }) {
       <DialogTrigger asChild>
         <Button size="sm" variant="default" className="h-8 px-3 gap-1 ">
           <CalendarCheck className="h-4 w-4" />
-          <span>Book</span>
+          <span>Checkin</span>
         </Button>
       </DialogTrigger>
 

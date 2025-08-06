@@ -15,7 +15,6 @@ import {
   BedDouble,
   Hotel,
   Crown,
-  Info,
   Home,
   Layers,
   Circle,
@@ -24,6 +23,7 @@ import {
   Clock,
   User2,
   ListChecks,
+  LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -211,7 +211,9 @@ export default function AllRooms() {
             Room Status
           </Label>
           <Select
-            onValueChange={(value: RoomStatus | "all") => setStatusFilter(value)}
+            onValueChange={(value: RoomStatus | "all") =>
+              setStatusFilter(value)
+            }
             defaultValue="all"
           >
             <SelectTrigger className="w-full">
@@ -219,13 +221,22 @@ export default function AllRooms() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value={RoomStatus.AVAILABLE} className="flex items-center gap-2">
+              <SelectItem
+                value={RoomStatus.AVAILABLE}
+                className="flex items-center gap-2"
+              >
                 <CheckCircle className="h-4 w-4" /> Available
               </SelectItem>
-              <SelectItem value={RoomStatus.RESERVED} className="flex items-center gap-2">
+              <SelectItem
+                value={RoomStatus.RESERVED}
+                className="flex items-center gap-2"
+              >
                 <Clock className="h-4 w-4" /> Reserved
               </SelectItem>
-              <SelectItem value={RoomStatus.OCCUPIED} className="flex items-center gap-2">
+              <SelectItem
+                value={RoomStatus.OCCUPIED}
+                className="flex items-center gap-2"
+              >
                 <User2 className="h-4 w-4" /> Occupied
               </SelectItem>
             </SelectContent>
@@ -302,15 +313,31 @@ export default function AllRooms() {
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" size="sm" className="h-8 px-3">
-                  <Info className="h-4 w-4 mr-1" />
-                  Info
-                </Button>
+              <div className="flex justify-around gap-2">
                 {room.roomStatus === RoomStatus.AVAILABLE ? (
-                  <BookRoomDialog room={room} />
+                  <>
+                    <Button variant="outline" size="sm" className="h-8 px-3 gap-1">
+                      <Clock className="h-4 w-4" />
+                      Reserve
+                    </Button>
+                    <BookRoomDialog room={room} />
+                  </>
+                ) : room.roomStatus === RoomStatus.RESERVED ? (
+                  <>
+                    <ReleaseRoomButton roomId={room!._id!.toString()} />
+                    <BookRoomDialog room={room} />
+                  </>
                 ) : (
-                  <ReleaseRoomButton roomId={room!._id!.toString()} />
+                  <>
+                    <Button variant="secondary" size="sm" className="h-8 px-3 gap-1">
+                      <BedDouble className="h-4 w-4" />
+                      Stayover
+                    </Button>
+                    <Button variant="default" size="sm" className="h-8 px-3">
+                      <LogOut className="h-4 w-4" />
+                      Checkout
+                    </Button>
+                  </>
                 )}
               </div>
             </Card>

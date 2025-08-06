@@ -43,10 +43,10 @@ export default function ReleaseRoomButton({ roomId }: ReleaseRoomButtonProps) {
       <Button
         variant="secondary"
         size="sm"
-        className="h-8 px-3"
+        className="h-8 px-3 gap-1"
         onClick={() => setOpen(true)}
       >
-        <RotateCcw className="h-4 w-4 mr-1" />
+        <RotateCcw className="h-4 w-4" />
         Release
       </Button>
 
