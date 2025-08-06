@@ -35,6 +35,7 @@ import { IRoom, RoomStatus, RoomType } from "@/models/room.model";
 import ReleaseRoomButton from "./components/ReleaseRoomButton";
 import ReservedCheckIn from "./home/ReservedCheckIn";
 import ReserveRoom from "./home/ReserveRoom";
+import StayOver from "./home/StayOver";
 
 const getRoomIcon = (type: RoomType) => {
   switch (type) {
@@ -330,14 +331,7 @@ export default function AllRooms() {
                   </>
                 ) : (
                   <>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      className="h-8 px-3 gap-1"
-                    >
-                      <BedDouble className="h-4 w-4" />
-                      Stayover
-                    </Button>
+                    <StayOver room={room} />
                     <Button variant="default" size="sm" className="h-8 px-3">
                       <LogOut className="h-4 w-4" />
                       Checkout

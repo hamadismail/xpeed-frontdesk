@@ -15,6 +15,7 @@ export enum RoomStatus {
 
 export interface IRoom {
   _id?: Types.ObjectId;
+  guestId?: Types.ObjectId;
   roomNo: string;
   roomType: RoomType;
   roomFloor: string;
@@ -24,6 +25,7 @@ export interface IRoom {
 
 const RoomSchema = new Schema<IRoom>(
   {
+    guestId: { type: Schema.Types.ObjectId, ref: "Book", default: null },
     roomNo: { type: String, required: true },
     roomType: { type: String, enum: Object.values(RoomType), required: true },
     roomFloor: { type: String, required: true },

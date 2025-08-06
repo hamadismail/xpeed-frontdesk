@@ -175,7 +175,7 @@ export default function BookRoomDialog({ room }: { room: IRoom }) {
         !paymentInfo.paidAmount ||
         !paymentInfo.remarks)
     ) {
-      toast.warning("Please enter room price");
+      toast.warning("Please enter required field");
       return;
     }
     setStep(step + 1);

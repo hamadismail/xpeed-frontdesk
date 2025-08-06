@@ -1,4 +1,4 @@
-"use server"
+"use server";
 import { connectDB } from "@/lib/mongoose";
 import { Book } from "@/models/book.model";
 import { Room, RoomStatus } from "@/models/room.model";
@@ -40,6 +40,7 @@ export async function POST(req: NextRequest) {
 
     // Mark room as booked
     room.roomStatus = RoomStatus.RESERVED;
+    room.guestId = newBooking?._id;
     await room.save();
 
     return NextResponse.json(
