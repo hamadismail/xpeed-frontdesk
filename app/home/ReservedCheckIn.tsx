@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -22,7 +22,7 @@ import {
   Check,
   Calendar,
 } from "lucide-react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import axios from "axios";
 import { IRoom, RoomType } from "@/models/room.model";
@@ -43,7 +43,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { GUEST_STATUS, OTAS, PAYMENT_METHOD } from "@/models/book.model";
+import { GUEST_STATUS, IBook, OTAS, PAYMENT_METHOD } from "@/models/book.model";
 
 const getRoomIcon = (type: RoomType) => {
   switch (type) {
@@ -64,6 +64,12 @@ export default function ReservedCheckIn({ room }: { room: IRoom }) {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(1);
+
+  const { data: singleBook } = useQuery<IBook>({
+    queryKey: ["book"],
+    queryFn: () =>
+      axios.get(`/api/book/${room?.guestId}`).then((res) => res.data),
+  });
 
   // Form State
   const [guestInfo, setGuestInfo] = useState({
@@ -97,7 +103,7 @@ export default function ReservedCheckIn({ room }: { room: IRoom }) {
 
   const { mutate: bookRoom, isPending } = useMutation({
     mutationFn: async () => {
-      const res = await axios.post("/api/book", {
+      const res = await axios.patch(`/api/book/${room?.guestId}`, {
         bookingInfo: {
           guest: { ...guestInfo },
           stay: { ...stayInfo },
@@ -123,6 +129,39 @@ export default function ReservedCheckIn({ room }: { room: IRoom }) {
       });
     },
   });
+
+  useEffect(() => {
+    if (singleBook?.guest?.name) {
+      setGuestInfo((prev) => ({
+        ...prev,
+        name: singleBook?.guest?.name,
+      }));
+    }
+    if (singleBook?.guest?.phone) {
+      setGuestInfo((prev) => ({
+        ...prev,
+        phone: singleBook?.guest?.phone,
+      }));
+    }
+    if (singleBook?.stay?.arrival) {
+      setStayInfo((prev) => ({
+        ...prev,
+        arrival: new Date(singleBook?.stay?.arrival),
+      }));
+    }
+    if (singleBook?.stay?.departure) {
+      setStayInfo((prev) => ({
+        ...prev,
+        departure: new Date(singleBook?.stay?.departure),
+      }));
+    }
+    if (singleBook?.payment?.paidAmount) {
+      setPaymentInfo((prev) => ({
+        ...prev,
+        paidAmount: singleBook?.payment?.paidAmount.toString(),
+      }));
+    }
+  }, [singleBook]);
 
   const resetForm = () => {
     setGuestInfo({
@@ -175,7 +214,7 @@ export default function ReservedCheckIn({ room }: { room: IRoom }) {
         !paymentInfo.paidAmount ||
         !paymentInfo.remarks)
     ) {
-      toast.warning("Please enter room price");
+      toast.warning("Please enter required fields");
       return;
     }
     setStep(step + 1);
