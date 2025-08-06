@@ -21,6 +21,9 @@ import {
   Circle,
   CheckCircle,
   XCircle,
+  Clock,
+  User2,
+  ListChecks,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,17 +31,8 @@ import AddRoomDialog from "./components/AddRoomDialog";
 import BookRoomDialog from "./components/BookRoomDialog";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { Types } from "mongoose";
-import { RoomType } from "@/models/room.model";
+import { IRoom, RoomStatus, RoomType } from "@/models/room.model";
 import ReleaseRoomButton from "./components/ReleaseRoomButton";
-
-type Room = {
-  _id: Types.ObjectId;
-  roomFloor: string;
-  roomType: RoomType;
-  roomNo: string;
-  isBooked: boolean;
-};
 
 const getRoomIcon = (type: RoomType) => {
   switch (type) {
@@ -58,8 +52,9 @@ const getRoomIcon = (type: RoomType) => {
 export default function AllRooms() {
   const [floorFilter, setFloorFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState<RoomType | "all">("all");
+  const [statusFilter, setStatusFilter] = useState<RoomStatus | "all">("all");
 
-  const { data: allRooms = [], isLoading } = useQuery<Room[]>({
+  const { data: allRooms = [], isLoading } = useQuery<IRoom[]>({
     queryKey: ["rooms"],
     queryFn: () => axios.get("/api/rooms").then((res) => res.data),
   });
@@ -67,15 +62,20 @@ export default function AllRooms() {
   const filteredRooms = allRooms.filter((room) => {
     return (
       (floorFilter === "all" || room.roomFloor.toString() === floorFilter) &&
-      (typeFilter === "all" || room.roomType === typeFilter)
+      (typeFilter === "all" || room.roomType === typeFilter) &&
+      (statusFilter === "all" || room.roomStatus === statusFilter)
     );
   });
 
   const occupiedCount = allRooms.filter(
-    (room) => room.isBooked === true
+    (room) => room.roomStatus === RoomStatus.OCCUPIED
   ).length;
 
-  const availableCount = allRooms.length - occupiedCount;
+  const reservedCount = allRooms.filter(
+    (room) => room.roomStatus === RoomStatus.RESERVED
+  ).length;
+
+  const availableCount = allRooms.length - (occupiedCount + reservedCount);
 
   if (isLoading) {
     return (
@@ -129,6 +129,15 @@ export default function AllRooms() {
             </div>
             <Badge variant="destructive" className="px-3 py-1">
               {occupiedCount}
+            </Badge>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 text-yellow-600">
+              <Clock className="h-4 w-4" />
+              <span className="font-medium">Reserved:</span>
+            </div>
+            <Badge className="px-3 py-1 bg-yellow-600 hover:bg-yellow-700">
+              {reservedCount}
             </Badge>
           </div>
           <div className="flex items-center gap-2">
@@ -196,6 +205,33 @@ export default function AllRooms() {
           </Select>
         </div>
 
+        <div className="flex-1">
+          <Label className="flex items-center gap-2 mb-2">
+            <ListChecks className="h-4 w-4" />
+            Room Status
+          </Label>
+          <Select
+            onValueChange={(value: RoomStatus | "all") => setStatusFilter(value)}
+            defaultValue="all"
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="All Types" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value={RoomStatus.AVAILABLE} className="flex items-center gap-2">
+                <CheckCircle className="h-4 w-4" /> Available
+              </SelectItem>
+              <SelectItem value={RoomStatus.RESERVED} className="flex items-center gap-2">
+                <Clock className="h-4 w-4" /> Reserved
+              </SelectItem>
+              <SelectItem value={RoomStatus.OCCUPIED} className="flex items-center gap-2">
+                <User2 className="h-4 w-4" /> Occupied
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
         <div className="flex items-end">
           <AddRoomDialog />
         </div>
@@ -211,6 +247,7 @@ export default function AllRooms() {
             onClick={() => {
               setFloorFilter("all");
               setTypeFilter("all");
+              setStatusFilter("all");
             }}
           >
             Clear Filters
@@ -220,10 +257,12 @@ export default function AllRooms() {
         <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filteredRooms.map((room) => (
             <Card
-              key={room._id.toString()}
+              key={room._id?.toString()}
               className={`p-4 transition-all hover:shadow-lg ${
-                room.isBooked === false
+                room.roomStatus === RoomStatus.AVAILABLE
                   ? "border-green-200 dark:border-green-900"
+                  : room.roomStatus === RoomStatus.RESERVED
+                  ? "border-yellow-200 dark:border-yellow-800"
                   : "border-red-200 dark:border-red-900"
               }`}
             >
@@ -233,11 +272,22 @@ export default function AllRooms() {
                   {room.roomNo}
                 </h3>
                 <Badge
-                  variant={room.isBooked === false ? "default" : "destructive"}
-                  className="flex items-center gap-1"
+                  variant={
+                    room.roomStatus === RoomStatus.AVAILABLE
+                      ? "default"
+                      : room.roomStatus === RoomStatus.RESERVED
+                      ? "outline"
+                      : "destructive"
+                  }
+                  className={`flex items-center gap-1 ${
+                    room.roomStatus === RoomStatus.RESERVED
+                      ? "bg-yellow-100 text-yellow-800 border-yellow-300"
+                      : ""
+                  }`}
                 >
                   <Circle className="h-2 w-2 fill-current" />
-                  {room.isBooked ? "Occupied" : "Available"}
+                  {room.roomStatus.charAt(0).toUpperCase() +
+                    room.roomStatus.slice(1)}
                 </Badge>
               </div>
 
@@ -257,12 +307,10 @@ export default function AllRooms() {
                   <Info className="h-4 w-4 mr-1" />
                   Info
                 </Button>
-                {room.isBooked === false ? (
+                {room.roomStatus === RoomStatus.AVAILABLE ? (
                   <BookRoomDialog room={room} />
                 ) : (
-                  <ReleaseRoomButton
-                    roomId={room._id.toString()}
-                  />
+                  <ReleaseRoomButton roomId={room!._id!.toString()} />
                 )}
               </div>
             </Card>
