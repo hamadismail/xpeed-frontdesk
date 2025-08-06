@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
     });
 
     // Mark room as booked
-    room.roomStatus = RoomStatus.OCCUPIED;
+    room.roomStatus = RoomStatus.RESERVED;
     await room.save();
 
     return NextResponse.json(

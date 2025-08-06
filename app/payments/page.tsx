@@ -222,14 +222,14 @@ export default function PaymentTable() {
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
-                    {guest.payment.subtotal.toLocaleString("en-IN", {
+                    {guest?.payment?.subtotal?.toLocaleString("en-IN", {
                       minimumFractionDigits: 0,
                       maximumFractionDigits: 2,
                     })}{" "}
                     RM
                   </TableCell>
                   <TableCell className="text-right">
-                    {guest.payment.paidAmount.toLocaleString("en-IN", {
+                    {guest?.payment?.paidAmount?.toLocaleString("en-IN", {
                       minimumFractionDigits: 0,
                       maximumFractionDigits: 2,
                     })}{" "}
@@ -238,12 +238,12 @@ export default function PaymentTable() {
                   <TableCell className="text-right">
                     <span
                       className={
-                        guest.payment.dueAmount > 0
+                        guest?.payment?.dueAmount > 0
                           ? "text-red-500"
                           : "text-green-500"
                       }
                     >
-                      {guest.payment.dueAmount.toLocaleString("en-IN", {
+                      {guest?.payment?.dueAmount?.toLocaleString("en-IN", {
                         minimumFractionDigits: 0,
                         maximumFractionDigits: 2,
                       })}{" "}

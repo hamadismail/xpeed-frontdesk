@@ -33,6 +33,8 @@ import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { IRoom, RoomStatus, RoomType } from "@/models/room.model";
 import ReleaseRoomButton from "./components/ReleaseRoomButton";
+import ReservedCheckIn from "./home/ReservedCheckIn";
+import ReserveRoom from "./home/ReserveRoom";
 
 const getRoomIcon = (type: RoomType) => {
   switch (type) {
@@ -293,6 +295,8 @@ export default function AllRooms() {
                   className={`flex items-center gap-1 ${
                     room.roomStatus === RoomStatus.RESERVED
                       ? "bg-yellow-100 text-yellow-800 border-yellow-300"
+                      : room.roomStatus === RoomStatus.AVAILABLE
+                      ? "bg-green-100 text-green-800 border-green-300"
                       : ""
                   }`}
                 >
@@ -316,20 +320,21 @@ export default function AllRooms() {
               <div className="flex justify-around gap-2">
                 {room.roomStatus === RoomStatus.AVAILABLE ? (
                   <>
-                    <Button variant="outline" size="sm" className="h-8 px-3 gap-1">
-                      <Clock className="h-4 w-4" />
-                      Reserve
-                    </Button>
+                    <ReserveRoom room={room} />
                     <BookRoomDialog room={room} />
                   </>
                 ) : room.roomStatus === RoomStatus.RESERVED ? (
                   <>
                     <ReleaseRoomButton roomId={room!._id!.toString()} />
-                    <BookRoomDialog room={room} />
+                    <ReservedCheckIn room={room} />
                   </>
                 ) : (
                   <>
-                    <Button variant="secondary" size="sm" className="h-8 px-3 gap-1">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="h-8 px-3 gap-1"
+                    >
                       <BedDouble className="h-4 w-4" />
                       Stayover
                     </Button>

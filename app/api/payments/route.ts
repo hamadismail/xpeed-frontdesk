@@ -1,5 +1,5 @@
 import { connectDB } from "@/lib/mongoose";
-import { Book } from "@/models/book.model";
+import { Book, GUEST_STATUS } from "@/models/book.model";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
@@ -24,10 +24,16 @@ export async function GET(request: Request) {
     }
 
     // Get total count for pagination
-    const totalCount = await Book.countDocuments(query);
+    const totalCount = await Book.countDocuments({
+      ...query,
+      "guest.status": GUEST_STATUS.CHECKED_IN,
+    });
 
     // Get paginated results with only payment-related fields
-    const guests = await Book.find(query)
+    const guests = await Book.find({
+      ...query,
+      "guest.status": GUEST_STATUS.CHECKED_IN,
+    })
       .select("guest payment roomId createdAt")
       .sort({ createdAt: -1 })
       .skip(skip)
