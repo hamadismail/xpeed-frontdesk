@@ -46,7 +46,7 @@ export default function AddRoomDialog() {
   const { mutate: createRoomMutate, isPending } = useMutation({
     mutationFn: (formData: RoomData) => createRoom(formData),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["rooms"] }); // 🔁 Re-fetch room list
+      queryClient.invalidateQueries({ queryKey: ["rooms"] });
       toast.success("Room added successfully");
       setFormData({ roomNo: "", roomType: "Single", roomFloor: "1" });
       setOpen(false);

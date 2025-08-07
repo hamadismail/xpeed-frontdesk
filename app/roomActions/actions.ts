@@ -32,15 +32,11 @@ export async function createRoom(payload: RoomData): Promise<{
 
     const newRoom = await Room.create(payload);
 
-    return {
-      success: true,
-      data: JSON.parse(JSON.stringify(newRoom)), // ✅ plain object
-    };
+    return JSON.parse(JSON.stringify(newRoom));
   } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Failed to create room",
-    };
+    throw new Error(
+      error instanceof Error ? error.message : "Failed to create room"
+    );
   }
 }
 
@@ -55,7 +51,7 @@ export async function releaseRoom(roomId: string): Promise<{
 
     return {
       success: true,
-      data: null
+      data: null,
     };
   } catch (error) {
     return {

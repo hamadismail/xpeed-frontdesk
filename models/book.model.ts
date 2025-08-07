@@ -15,6 +15,7 @@ export enum GUEST_STATUS {
   CHECKED_IN = "CheckedIn",
   CHECKED_OUT = "CheckedOut",
   RESERVED = "Reserved",
+  CANCEL = "Cancel",
 }
 
 export enum PAYMENT_METHOD {

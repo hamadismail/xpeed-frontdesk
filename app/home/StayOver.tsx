@@ -11,13 +11,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import {
-  BedDouble,
-  BedSingle,
-  Crown,
-  Hotel,
-  Calendar,
-} from "lucide-react";
+import { BedDouble, BedSingle, Crown, Hotel, Calendar } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import axios from "axios";
@@ -31,7 +25,7 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
-import {IBook} from "@/models/book.model";
+import { IBook } from "@/models/book.model";
 
 const getRoomIcon = (type: RoomType) => {
   switch (type) {
@@ -52,7 +46,7 @@ export default function StayOver({ room }: { room: IRoom }) {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
 
-  const { data: singleGuest, isLoading: guestLoading } = useQuery<IBook>({
+  const { data: singleGuest } = useQuery<IBook>({
     queryKey: ["books"],
     queryFn: () =>
       axios.get(`/api/stayover/${room?.guestId}`).then((res) => res.data),
@@ -260,7 +254,9 @@ export default function StayOver({ room }: { room: IRoom }) {
           </div>
 
           <div className="flex justify-end gap-2 mt-4">
-            <Button onClick={() => updateGuest()} className="gap-1">Submit</Button>
+            <Button onClick={() => updateGuest()} className="gap-1">
+              {isPending ? "Process..." : "Submit"}
+            </Button>
           </div>
         </div>
       </DialogContent>

@@ -23,7 +23,6 @@ import {
   Clock,
   User2,
   ListChecks,
-  LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +35,7 @@ import ReleaseRoomButton from "./components/ReleaseRoomButton";
 import ReservedCheckIn from "./home/ReservedCheckIn";
 import ReserveRoom from "./home/ReserveRoom";
 import StayOver from "./home/StayOver";
+import CheckOut from "./home/CheckOut";
 
 const getRoomIcon = (type: RoomType) => {
   switch (type) {
@@ -332,10 +332,7 @@ export default function AllRooms() {
                 ) : (
                   <>
                     <StayOver room={room} />
-                    <Button variant="default" size="sm" className="h-8 px-3">
-                      <LogOut className="h-4 w-4" />
-                      Checkout
-                    </Button>
+                    <CheckOut room={room}/>
                   </>
                 )}
               </div>

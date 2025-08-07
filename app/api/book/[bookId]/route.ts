@@ -9,7 +9,7 @@ export async function GET(
 ) {
   try {
     await connectDB();
-    const { bookId } = params;
+    const { bookId } = await params;
 
     if (!bookId) {
       return NextResponse.json(

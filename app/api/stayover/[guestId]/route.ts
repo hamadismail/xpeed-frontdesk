@@ -20,7 +20,7 @@ export async function GET(
 
     const book = await Book.findById(guestId)
       .select(
-        "guest.name stay.arrival stay.departure subtotal payment.paidAmount payment.dueAmount payment.roomPrice remarks"
+        "guest.name stay.arrival stay.departure payment.subtotal payment.paidAmount payment.dueAmount payment.roomPrice remarks"
       )
       .lean();
 
@@ -94,7 +94,7 @@ export async function PATCH(
     }
 
     return NextResponse.json(updatedGuest, { status: 200 });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     console.error("Error updating guest:", error);
     return NextResponse.json(

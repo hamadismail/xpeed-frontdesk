@@ -1,0 +1,55 @@
+import { connectDB } from "@/lib/mongoose";
+import { Book, GUEST_STATUS } from "@/models/book.model";
+import { Room, RoomStatus } from "@/models/room.model";
+import { NextResponse } from "next/server";
+
+export async function PATCH(
+  req: Request,
+  { params }: { params: { roomId: string } }
+) {
+  try {
+    await connectDB();
+    const { roomId } = await params;
+
+    // 1. Update Room Status to "Available"
+    const updatedRoom = await Room.findByIdAndUpdate(
+      roomId,
+      { roomStatus: RoomStatus.AVAILABLE },
+      { new: true }
+    );
+
+    if (!updatedRoom) {
+      return NextResponse.json(
+        { success: false, error: "Room not found" },
+        { status: 404 }
+      );
+    }
+
+    // 2. Find and Update Guest Status to "Checked Out"
+    const guest = await Book.findByIdAndUpdate(
+      updatedRoom?.guestId,
+      {
+        $set: {
+          "guest.status": GUEST_STATUS.CHECKED_OUT,
+          "guest.checkedOutAt": new Date(),
+        },
+      },
+      { new: true }
+    );
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        room: updatedRoom,
+        guest: guest || { message: "No active guest found for this room" },
+      },
+    });
+  } catch {
+    return NextResponse.json(
+      {
+        success: false,
+      },
+      { status: 500 }
+    );
+  }
+}

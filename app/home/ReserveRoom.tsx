@@ -100,7 +100,7 @@ export default function ReserveRoom({ room }: { room: IRoom }) {
       return res.data;
     },
     onSuccess: () => {
-      toast.success("Room booked successfully!");
+      toast.success("Room reserved successfully!");
       queryClient.invalidateQueries({ queryKey: ["rooms"] });
       resetForm();
       setOpen(false);
