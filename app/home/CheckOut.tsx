@@ -17,7 +17,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import axios from "axios";
 import { IRoom, RoomType } from "@/models/room.model";
-import { IBook } from "@/models/book.model";
+import { GUEST_STATUS, IBook } from "@/models/book.model";
 
 const getRoomIcon = (type: RoomType) => {
   switch (type) {
@@ -50,7 +50,9 @@ export default function CheckOut({ room }: { room: IRoom }) {
 
   const { mutate: checkOutMutation, isPending } = useMutation({
     mutationFn: async () => {
-      const res = await axios.patch(`/api/rooms/${room?._id}`);
+      const res = await axios.patch(
+        `/api/rooms/${(room?._id, { status: GUEST_STATUS.CHECKED_OUT })}`
+      );
       return res.data;
     },
     onSuccess: () => {
@@ -111,10 +113,14 @@ export default function CheckOut({ room }: { room: IRoom }) {
               <span>RM {singleGuest?.payment?.paidAmount || "0.00"}</span>
             </div>
             <div className="flex justify-between font-bold text-lg mt-2 pt-2 border-t">
-              <span className={hasDueAmount ? "text-destructive" : "text-green-600"}>
+              <span
+                className={hasDueAmount ? "text-destructive" : "text-green-600"}
+              >
                 Due Amount:
               </span>
-              <span className={hasDueAmount ? "text-destructive" : "text-green-600"}>
+              <span
+                className={hasDueAmount ? "text-destructive" : "text-green-600"}
+              >
                 RM {dueAmount.toFixed(2)}
               </span>
             </div>
@@ -125,7 +131,8 @@ export default function CheckOut({ room }: { room: IRoom }) {
             <Alert variant="destructive">
               <AlertTitle>Outstanding Balance</AlertTitle>
               <AlertDescription>
-                This guest has an unpaid balance. Please confirm payment or acknowledge to proceed with checkout.
+                This guest has an unpaid balance. Please confirm payment or
+                acknowledge to proceed with checkout.
               </AlertDescription>
             </Alert>
           )}
@@ -146,10 +153,7 @@ export default function CheckOut({ room }: { room: IRoom }) {
 
           {/* Action Buttons */}
           <div className="flex justify-end gap-2 mt-4">
-            <Button
-              variant="outline"
-              onClick={() => setOpen(false)}
-            >
+            <Button variant="outline" onClick={() => setOpen(false)}>
               Cancel
             </Button>
             <Button

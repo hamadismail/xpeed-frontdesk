@@ -31,11 +31,11 @@ import BookRoomDialog from "./components/BookRoomDialog";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { IRoom, RoomStatus, RoomType } from "@/models/room.model";
-import ReleaseRoomButton from "./components/ReleaseRoomButton";
 import ReservedCheckIn from "./home/ReservedCheckIn";
 import ReserveRoom from "./home/ReserveRoom";
 import StayOver from "./home/StayOver";
 import CheckOut from "./home/CheckOut";
+import Release from "./home/Release";
 
 const getRoomIcon = (type: RoomType) => {
   switch (type) {
@@ -318,6 +318,7 @@ export default function AllRooms() {
                 </div>
               </div>
 
+              {/* Button Container */}
               <div className="flex justify-around gap-2">
                 {room.roomStatus === RoomStatus.AVAILABLE ? (
                   <>
@@ -326,13 +327,13 @@ export default function AllRooms() {
                   </>
                 ) : room.roomStatus === RoomStatus.RESERVED ? (
                   <>
-                    <ReleaseRoomButton roomId={room!._id!.toString()} />
+                    <Release room={room} />
                     <ReservedCheckIn room={room} />
                   </>
                 ) : (
                   <>
                     <StayOver room={room} />
-                    <CheckOut room={room}/>
+                    <CheckOut room={room} />
                   </>
                 )}
               </div>

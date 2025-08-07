@@ -1,15 +1,17 @@
 import { connectDB } from "@/lib/mongoose";
-import { Book, GUEST_STATUS } from "@/models/book.model";
+import { Book } from "@/models/book.model";
 import { Room, RoomStatus } from "@/models/room.model";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function PATCH(
-  req: Request,
+  req: NextRequest,
   { params }: { params: { roomId: string } }
 ) {
   try {
     await connectDB();
     const { roomId } = await params;
+    const body = await req.json();
+    const { status } = body;
 
     // 1. Update Room Status to "Available"
     const updatedRoom = await Room.findByIdAndUpdate(
@@ -30,7 +32,7 @@ export async function PATCH(
       updatedRoom?.guestId,
       {
         $set: {
-          "guest.status": GUEST_STATUS.CHECKED_OUT,
+          "guest.status": status,
           "guest.checkedOutAt": new Date(),
         },
       },
