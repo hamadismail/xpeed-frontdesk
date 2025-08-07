@@ -39,7 +39,7 @@ export async function GET(
 }
 
 export async function PATCH(
-  req: Request,
+  req: NextRequest,
   { params }: { params: { guestId: string } }
 ) {
   try {
@@ -56,45 +56,39 @@ export async function PATCH(
     const body = await req.json();
     const { bookingInfo } = body;
 
-    if (!bookingInfo || !bookingInfo.stay || !bookingInfo.payment) {
+    if (!bookingInfo?.stay || !bookingInfo?.payment) {
       return NextResponse.json(
         { message: "Invalid booking information." },
         { status: 400 }
       );
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const updatePayload: any = {};
-
-    if (bookingInfo?.stay) {
-      for (const key in bookingInfo.stay) {
-        updatePayload[`stay.${key}`] = bookingInfo.stay[key];
-      }
-    }
-
-    if (bookingInfo?.payment) {
-      for (const key in bookingInfo.payment) {
-        updatePayload[`payment.${key}`] = bookingInfo.payment[key];
-      }
-    }
-
-    const updatedGuest = await Book.findByIdAndUpdate(
-      guestId,
-      {
-        $set: updatePayload,
-      },
-      { new: true }
-    );
-
-    if (!updatedGuest) {
+    // Get the current document first
+    const currentBooking = await Book.findById(guestId);
+    if (!currentBooking) {
       return NextResponse.json(
         { message: "Guest not found." },
         { status: 404 }
       );
     }
 
+    const updatedGuest = await Book.findByIdAndUpdate(
+      guestId,
+      {
+        $set: {
+          "stay.arrival": bookingInfo.stay.arrival,
+          "stay.departure": bookingInfo.stay.departure,
+          "payment.subtotal": bookingInfo.payment.subtotal,
+          "payment.discount": bookingInfo.payment.discount,
+          "payment.paidAmount": bookingInfo.payment.paidAmount,
+          "payment.dueAmount": bookingInfo.payment.dueAmount,
+        },
+      },
+      { new: true }
+    );
+
     return NextResponse.json(updatedGuest, { status: 200 });
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     console.error("Error updating guest:", error);
     return NextResponse.json(

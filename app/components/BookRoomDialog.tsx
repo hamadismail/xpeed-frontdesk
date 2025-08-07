@@ -392,8 +392,11 @@ export default function BookRoomDialog({ room }: { room: IRoom }) {
                       onSelect={(date) =>
                         setStayInfo({ ...stayInfo, arrival: date })
                       }
+                      disabled={{
+                        before: new Date(new Date().setHours(0, 0, 0, 0)),
+                      }}
 
-                      // captionLayout="dropdown"
+
                     />
                   </PopoverContent>
                 </Popover>
@@ -651,11 +654,15 @@ export default function BookRoomDialog({ room }: { room: IRoom }) {
               </div>
               <div className="flex justify-between mt-2 pt-2 border-t">
                 <span className="text-sm font-medium">Total Paid:</span>
-                <span className="font-bold">RM {paymentInfo.paidAmount}</span>
+                <span className="font-bold">
+                  RM {paymentInfo.paidAmount || 0}
+                </span>
               </div>
               <div className="flex justify-between mt-2 pt-2 border-t text-red-500">
                 <span className="text-sm font-medium">Due Amount:</span>
-                <span className="font-bold">RM {calculateDue() || 0}</span>
+                <span className="font-bold">
+                  RM {calculateDue() || calculateTotal()}
+                </span>
               </div>
             </div>
 

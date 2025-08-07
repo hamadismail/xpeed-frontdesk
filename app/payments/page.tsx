@@ -22,6 +22,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import PaymentModal from "./components/PaymentModal";
 
 interface GuestPayment {
   _id: string;
@@ -163,10 +164,11 @@ export default function PaymentTable() {
             <TableRow>
               <TableHead>Guest</TableHead>
               <TableHead>Contact</TableHead>
-              <TableHead className="text-right">Subtotal</TableHead>
-              <TableHead className="text-right">Paid</TableHead>
-              <TableHead className="text-right">Due</TableHead>
+              <TableHead>Subtotal</TableHead>
+              <TableHead>Paid</TableHead>
+              <TableHead>Due</TableHead>
               <TableHead>Method</TableHead>
+              <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -193,17 +195,20 @@ export default function PaymentTable() {
                     <TableCell>
                       <Skeleton className="h-4 w-[60px]" />
                     </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-[60px]" />
+                    </TableCell>
                   </TableRow>
                 ))
             ) : isError ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-red-500">
+                <TableCell colSpan={7} className="text-center text-red-500">
                   Failed to load payments
                 </TableCell>
               </TableRow>
             ) : data?.payments?.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center">
+                <TableCell colSpan={7} className="text-center">
                   No payments found
                 </TableCell>
               </TableRow>
@@ -221,21 +226,21 @@ export default function PaymentTable() {
                       {guest.guest.phone}
                     </div>
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell>
                     {guest?.payment?.subtotal?.toLocaleString("en-IN", {
                       minimumFractionDigits: 0,
                       maximumFractionDigits: 2,
                     })}{" "}
                     RM
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell>
                     {guest?.payment?.paidAmount?.toLocaleString("en-IN", {
                       minimumFractionDigits: 0,
                       maximumFractionDigits: 2,
                     })}{" "}
                     RM
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell>
                     <span
                       className={
                         guest?.payment?.dueAmount > 0
@@ -254,6 +259,9 @@ export default function PaymentTable() {
                     <Badge variant="outline" className="capitalize">
                       {guest.payment.paymentMethod}
                     </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <PaymentModal guest={guest}/>
                   </TableCell>
                 </TableRow>
               ))

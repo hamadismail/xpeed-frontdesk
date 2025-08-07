@@ -50,9 +50,9 @@ export default function CheckOut({ room }: { room: IRoom }) {
 
   const { mutate: checkOutMutation, isPending } = useMutation({
     mutationFn: async () => {
-      const res = await axios.patch(
-        `/api/rooms/${(room?._id, { status: GUEST_STATUS.CHECKED_OUT })}`
-      );
+      const res = await axios.patch(`/api/rooms/${room?._id}`, {
+        status: GUEST_STATUS.CHECKED_OUT,
+      });
       return res.data;
     },
     onSuccess: () => {

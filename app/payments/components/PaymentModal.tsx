@@ -15,7 +15,7 @@ import { BedDouble, BedSingle, Crown, Hotel, Calendar } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import axios from "axios";
-import { IRoom, RoomType } from "@/models/room.model";
+import { RoomType } from "@/models/room.model";
 import { Calendar as DatePicker } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import {
@@ -42,18 +42,31 @@ const getRoomIcon = (type: RoomType) => {
   }
 };
 
-export default function StayOver({ room }: { room: IRoom }) {
+interface GuestPayment {
+  _id: string;
+  guest: {
+    name: string;
+    email: string;
+    phone: string;
+  };
+  payment: {
+    subtotal: number;
+    paidAmount: number;
+    dueAmount: number;
+    paymentMethod: string;
+  };
+  roomId: string;
+  createdAt: string;
+}
+
+export default function PaymentModal({ guest }: { guest: GuestPayment }) {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [formErrors, setFormErrors] = useState({
-    departure: "",
-    paidAmount: "",
-  });
 
   const { data: singleGuest } = useQuery<IBook>({
-    queryKey: ["books", room?.guestId],
+    queryKey: ["books"],
     queryFn: () =>
-      axios.get(`/api/stayover/${room?.guestId}`).then((res) => res.data),
+      axios.get(`/api/stayover/${guest?._id}`).then((res) => res.data),
   });
 
   const [stayInfo, setStayInfo] = useState({
@@ -65,42 +78,18 @@ export default function StayOver({ room }: { room: IRoom }) {
     paidAmount: "",
   });
 
-  const validateForm = () => {
-    const errors = {
-      departure: !stayInfo.departure ? "Check out date is required" : "",
-      paidAmount: !paymentInfo.paidAmount
-        ? "Paid amount is required"
-        : isNaN(Number(paymentInfo.paidAmount))
-        ? "Must be a valid number"
-        : "",
-    };
-    setFormErrors(errors);
-    return !errors.departure && !errors.paidAmount;
-  };
-
   const { mutate: updateGuest, isPending } = useMutation({
     mutationFn: async () => {
-      if (!validateForm()) {
-        throw new Error("Please fix form errors");
-      }
-
-      const payload = {
+      const res = await axios.patch(`/api/stayover/${guest?._id}`, {
         bookingInfo: {
-          stay: {
-            arrival: stayInfo.arrival || new Date(),
-            departure: stayInfo.departure,
-          },
+          stay: { ...stayInfo },
           payment: {
-            paidAmount:
-              (parseFloat(paymentInfo.paidAmount) || 0) +
-              (singleGuest?.payment?.paidAmount || 0),
-            subtotal: calculateSubTotal(),
+            ...paymentInfo,
+            subtotal: calculateTotal() + parseFloat(paymentInfo.paidAmount),
             dueAmount: calculateDue(),
           },
         },
-      };
-
-      const res = await axios.patch(`/api/stayover/${room?.guestId}`, payload);
+      });
       return res.data;
     },
     onSuccess: () => {
@@ -124,10 +113,6 @@ export default function StayOver({ room }: { room: IRoom }) {
     setPaymentInfo({
       paidAmount: "",
     });
-    setFormErrors({
-      departure: "",
-      paidAmount: "",
-    });
   };
 
   useEffect(() => {
@@ -142,7 +127,7 @@ export default function StayOver({ room }: { room: IRoom }) {
   const calculateNights = () => {
     if (stayInfo.arrival && stayInfo.departure) {
       const diffTime = Math.abs(
-        stayInfo.departure.getTime() - stayInfo.arrival.getTime()
+        stayInfo?.departure?.getTime() - stayInfo.arrival.getTime()
       );
       return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
     }
@@ -152,26 +137,18 @@ export default function StayOver({ room }: { room: IRoom }) {
   const calculateTotal = () => {
     const night = calculateNights();
     const roomPrice = night * (singleGuest?.payment?.roomPrice || 0);
+
     return roomPrice + (singleGuest?.payment?.dueAmount || 0);
   };
 
-  const calculateSubTotal = () => {
-    const night = calculateNights();
-    const roomPrice = night * (singleGuest?.payment?.roomPrice || 0);
-    return roomPrice + (singleGuest?.payment?.subtotal || 0);
-  };
-
   const calculateDue = () => {
-    return Math.max(
-      0,
-      calculateTotal() - (parseFloat(paymentInfo.paidAmount) || 0)
-    );
+    return calculateTotal() - parseFloat(paymentInfo.paidAmount);
   };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" variant="secondary" className="h-8 px-3 gap-1">
+        <Button size="sm" variant="secondary" className="h-8 px-3 gap-1 ">
           <BedDouble className="h-4 w-4" />
           <span>Stayover</span>
         </Button>
@@ -180,13 +157,13 @@ export default function StayOver({ room }: { room: IRoom }) {
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <div className="flex items-center gap-3">
-            {getRoomIcon(room.roomType)}
+
             <div>
               <DialogTitle className="text-xl font-bold">
-                Stay Over {room.roomNo}
+                Pay Due Amount
               </DialogTitle>
               <DialogDescription className="capitalize">
-                {room.roomType} • Floor {room.roomFloor}
+                Pay Due Amount
               </DialogDescription>
             </div>
           </div>
@@ -194,75 +171,20 @@ export default function StayOver({ room }: { room: IRoom }) {
 
         <div className="grid gap-4">
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>New Check Out Date *</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant={"outline"}
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !stayInfo.departure && "text-muted-foreground"
-                    )}
-                  >
-                    <Calendar className="mr-2 h-4 w-4" />
-                    {stayInfo.departure ? (
-                      format(stayInfo.departure, "PPP")
-                    ) : (
-                      <span>Pick a date</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 max-h-[280px] overflow-auto">
-                  <DatePicker
-                    mode="single"
-                    selected={stayInfo.departure}
-                    onSelect={(date) => {
-                      setStayInfo({
-                        ...stayInfo,
-                        departure: date ?? undefined,
-                      });
-                      if (formErrors.departure) {
-                        setFormErrors({
-                          ...formErrors,
-                          departure: "",
-                        });
-                      }
-                    }}
-                    disabled={{
-                      before: stayInfo.arrival || new Date(),
-                    }}
-                  />
-                </PopoverContent>
-              </Popover>
-              {formErrors.departure && (
-                <p className="text-sm text-red-500">{formErrors.departure}</p>
-              )}
-            </div>
 
             <div className="space-y-2">
               <Label>Paid Amount *</Label>
               <Input
                 type="number"
                 value={paymentInfo.paidAmount}
-                onChange={(e) => {
+                onChange={(e) =>
                   setPaymentInfo({
                     ...paymentInfo,
                     paidAmount: e.target.value,
-                  });
-                  if (formErrors.paidAmount) {
-                    setFormErrors({
-                      ...formErrors,
-                      paidAmount: "",
-                    });
-                  }
-                }}
+                  })
+                }
                 placeholder="0.00"
-                className={formErrors.paidAmount ? "border-red-500" : ""}
               />
-              {formErrors.paidAmount && (
-                <p className="text-sm text-red-500">{formErrors.paidAmount}</p>
-              )}
             </div>
           </div>
 
@@ -283,10 +205,7 @@ export default function StayOver({ room }: { room: IRoom }) {
               Room Price: (x{calculateNights()})
             </span>
             <span className="font-medium">
-              RM{" "}
-              {(
-                (singleGuest?.payment?.roomPrice || 0) * calculateNights()
-              ).toFixed(2)}
+              RM {(singleGuest?.payment?.roomPrice || 0) * calculateNights()}
             </span>
           </div>
 
@@ -294,43 +213,33 @@ export default function StayOver({ room }: { room: IRoom }) {
           <div className="flex justify-between mt-2 pt-2 border-t text-red-500">
             <span className="text-sm font-medium">Previous Due:</span>
             <span className="font-bold">
-              RM {(singleGuest?.payment?.dueAmount || 0).toFixed(2)}
+              RM {singleGuest?.payment?.dueAmount || "N/A"}
             </span>
           </div>
 
           {/* Subtotal */}
           <div className="flex justify-between mt-2 pt-2 border-t">
             <span className="text-sm font-medium">New Subtotal:</span>
-            <span className="font-bold">RM {calculateTotal().toFixed(2)}</span>
+            <span className="font-bold">RM {calculateTotal()}</span>
           </div>
 
           {/* Total Paid */}
           <div className="flex justify-between mt-2 pt-2 border-t">
             <span className="text-sm font-medium">Total Paid:</span>
-            <span className="font-bold">
-              RM{" "}
-              {(
-                parseFloat(paymentInfo.paidAmount || "0") +
-                (singleGuest?.payment?.paidAmount || 0)
-              ).toFixed(2)}
-            </span>
+            <span className="font-bold">RM {paymentInfo.paidAmount || 0}</span>
           </div>
 
           {/* Current Due */}
           <div className="flex justify-between mt-2 pt-2 border-t text-red-500">
             <span className="text-sm font-medium">Current Due:</span>
-            <span className="font-bold">RM {calculateDue().toFixed(2)}</span>
+            <span className="font-bold">
+              RM {calculateDue() || calculateTotal()}
+            </span>
           </div>
 
           <div className="flex justify-end gap-2 mt-4">
-            <Button
-              onClick={() => updateGuest()}
-              className="gap-1"
-              disabled={
-                isPending || !stayInfo.departure || !paymentInfo.paidAmount
-              }
-            >
-              {isPending ? "Processing..." : "Submit"}
+            <Button onClick={() => updateGuest()} className="gap-1">
+              {isPending ? "Process..." : "Submit"}
             </Button>
           </div>
         </div>
