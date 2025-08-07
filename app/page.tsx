@@ -26,16 +26,18 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import AddRoomDialog from "./components/AddRoomDialog";
-import BookRoomDialog from "./components/BookRoomDialog";
+// import AddRoomDialog from "./components/AddRoomDialog";
+// import BookRoomDialog from "./components/BookRoomDialog";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { IRoom, RoomStatus, RoomType } from "@/models/room.model";
-import ReservedCheckIn from "./home/ReservedCheckIn";
-import ReserveRoom from "./home/ReserveRoom";
-import StayOver from "./home/StayOver";
 import CheckOut from "./home/CheckOut";
 import Release from "./home/Release";
+import AddRoomDialog from "./components/addroomdialog";
+import ReserveRoom from "./home/reserveroom";
+import BookRoomDialog from "./components/bookroomdialog";
+import ReservedCheckIn from "./home/reservedcheckin";
+import StayOver from "./home/stayover";
 
 const getRoomIcon = (type: RoomType) => {
   switch (type) {

@@ -3,7 +3,6 @@
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarHeader,
 } from "@/components/ui/sidebar";
@@ -16,14 +15,9 @@ import {
   Users,
   CreditCard,
   Settings,
-  LogOut,
   ChevronRight,
-  Home,
-  UserCircle,
-  HousePlus,
+
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const navLinks = [
   { label: "All Rooms", href: "/", icon: <Hotel className="h-5 w-5" /> },

@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
-import { Invoice } from "../components/Invoice";
+import { Invoice } from "../components/invoice";
 import {
   Select,
   SelectContent,

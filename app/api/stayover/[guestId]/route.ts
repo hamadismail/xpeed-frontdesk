@@ -7,8 +7,8 @@ import { Types } from "mongoose";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { guestId: string } }
-) {
+  { params }: { params: Promise<{ guestId: string }> }
+): Promise<NextResponse> {
   try {
     await connectDB();
     const { guestId } = await params;
@@ -40,8 +40,8 @@ export async function GET(
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { guestId: string } }
-) {
+  { params }: { params: Promise<{ guestId: string }> }
+): Promise<NextResponse> {
   try {
     await connectDB();
     const { guestId } = await params;
@@ -88,7 +88,7 @@ export async function PATCH(
     );
 
     return NextResponse.json(updatedGuest, { status: 200 });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     console.error("Error updating guest:", error);
     return NextResponse.json(

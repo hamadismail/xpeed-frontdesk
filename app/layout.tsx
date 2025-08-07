@@ -5,7 +5,7 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { Toaster } from "@/components/ui/sonner";
-import QueryProvider from "@/lib/QueryProvider";
+import QueryProvider from "@/lib/queryprovider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

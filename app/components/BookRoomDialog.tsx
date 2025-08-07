@@ -35,7 +35,6 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
-import { Invoice } from "./Invoice";
 import {
   Select,
   SelectContent,
@@ -44,6 +43,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { GUEST_STATUS, OTAS, PAYMENT_METHOD } from "@/models/book.model";
+import { Invoice } from "./invoice";
 
 const getRoomIcon = (type: RoomType) => {
   switch (type) {

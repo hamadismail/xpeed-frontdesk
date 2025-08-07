@@ -4,9 +4,9 @@ import { Room, RoomStatus } from "@/models/room.model";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
-  req: Request,
-  { params }: { params: { bookId: string } }
-) {
+  req: NextRequest,
+  { params }: { params: Promise<{ bookId: string }> }
+): Promise<NextResponse> {
   try {
     await connectDB();
     const { bookId } = await params;
@@ -40,8 +40,8 @@ export async function GET(
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { bookId: string } }
-) {
+  { params }: { params: Promise<{ bookId: string }> }
+): Promise<NextResponse> {
   try {
     await connectDB();
     const { bookId } = await params;

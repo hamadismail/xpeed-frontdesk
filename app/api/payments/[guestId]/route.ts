@@ -4,8 +4,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { guestId: string } }
-) {
+  { params }: { params: Promise<{ guestId: string }> }
+): Promise<NextResponse> {
   try {
     await connectDB();
     const { guestId } = await params;
