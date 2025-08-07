@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 
 interface Guest {
   _id: string;
@@ -45,6 +46,7 @@ interface Guest {
     phone: string;
     country: string;
     passport: string;
+    status: string;
   };
   stay: {
     arrival: Date;
@@ -97,6 +99,13 @@ export default function GuestTable() {
     setIsDialogOpen(true);
   };
 
+  const statusColors = {
+    CheckedIn: "bg-green-100 text-green-800 border-green-300",
+    CheckedOut: "bg-blue-100 text-blue-800 border-blue-300",
+    Reserved: "bg-amber-100 text-amber-800 border-amber-300",
+    Cancel: "bg-red-100 text-red-800 border-red-300",
+  };
+
   return (
     <div className="space-y-4 p-4">
       <div className="flex items-center justify-between">
@@ -144,9 +153,9 @@ export default function GuestTable() {
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Phone</TableHead>
+              <TableHead>Contact</TableHead>
               <TableHead>Country</TableHead>
+              <TableHead>Status</TableHead>
               <TableHead>Arrival</TableHead>
               <TableHead>Departure</TableHead>
               <TableHead>Actions</TableHead>
@@ -177,7 +186,7 @@ export default function GuestTable() {
                       <Skeleton className="h-4 w-[100px]" />
                     </TableCell>
                     <TableCell>
-                      <Skeleton className="h-8 w-[60px]" />
+                      <Skeleton className="h-4 w-[100px]" />
                     </TableCell>
                   </TableRow>
                 ))
@@ -199,9 +208,26 @@ export default function GuestTable() {
                   <TableCell className="font-medium">
                     {guest.guest.name}
                   </TableCell>
-                  <TableCell>{guest.guest.email}</TableCell>
-                  <TableCell>{guest.guest.phone}</TableCell>
+                  <TableCell>
+                    <div className="text-sm text-muted-foreground">
+                      {guest.guest.email}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {guest.guest.phone}
+                    </div>
+                  </TableCell>
                   <TableCell>{guest.guest.country}</TableCell>
+                  <TableCell>
+                    <Badge
+                      className={`capitalize ${
+                        statusColors[
+                          guest.guest.status as keyof typeof statusColors
+                        ] || "bg-gray-100 text-gray-800"
+                      }`}
+                    >
+                      {guest.guest.status}
+                    </Badge>
+                  </TableCell>
                   <TableCell>
                     {format(new Date(guest.stay.arrival), "MMM dd, yyyy")}
                   </TableCell>
