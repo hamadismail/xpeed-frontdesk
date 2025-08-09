@@ -6,6 +6,7 @@ import { SidebarInset, SidebarProvider } from "../components/ui/sidebar";
 import { AppSidebar } from "../components/layout/app-sidebar";
 import { SiteHeader } from "../components/layout/site-header";
 import { Toaster } from "../components/ui/sonner";
+import { ThemeProvider } from "../providers/theme-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,27 +29,34 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <SidebarProvider
-          style={
-            {
-              "--sidebar-width": "calc(var(--spacing) * 72)",
-              "--header-height": "calc(var(--spacing) * 12)",
-            } as React.CSSProperties
-          }
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
         >
-          <AppSidebar />
-          <SidebarInset>
-            <SiteHeader />
-            <main>
-              <QueryProvider>{children}</QueryProvider>
-              <Toaster position="top-center" richColors />
-            </main>
-          </SidebarInset>
-        </SidebarProvider>
+          <SidebarProvider
+            style={
+              {
+                "--sidebar-width": "calc(var(--spacing) * 72)",
+                "--header-height": "calc(var(--spacing) * 12)",
+              } as React.CSSProperties
+            }
+          >
+            <AppSidebar />
+            <SidebarInset>
+              <SiteHeader />
+              <main>
+                <QueryProvider>{children}</QueryProvider>
+                <Toaster position="top-center" richColors />
+              </main>
+            </SidebarInset>
+          </SidebarProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
