@@ -43,7 +43,7 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { GUEST_STATUS, OTAS, PAYMENT_METHOD } from "@/src/models/book.model";
-import { Invoice } from "../../components/layout/invoice";
+import { Invoice } from "@/src/components/layout/invoice";
 
 const getRoomIcon = (type: RoomType) => {
   switch (type) {

@@ -10,6 +10,7 @@ import {
   CreditCard,
   Settings,
   ChevronRight,
+  Clock,
 
 } from "lucide-react";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarHeader } from "../ui/sidebar";
@@ -26,6 +27,11 @@ const navLinks = [
     label: "Payments",
     href: "/payments",
     icon: <CreditCard className="h-5 w-5" />,
+  },
+  {
+    label: "Reservation",
+    href: "/reservation",
+    icon: <Clock className="h-5 w-5" />,
   },
 ];
 

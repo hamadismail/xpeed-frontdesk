@@ -19,7 +19,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { IRoom, RoomStatus, RoomType } from "@/src/models/room.model";
-import AddRoomDialog from "@/src/features/home/addroomdialog";
+import AddRoomDialog from "@/src/components/features/home/addroomdialog";
 import { Badge } from "@/src/components/ui/badge";
 import { Label } from "@/src/components/ui/label";
 import {
@@ -31,12 +31,12 @@ import {
 } from "@/src/components/ui/select";
 import { Button } from "@/src/components/ui/button";
 import { Card } from "@/src/components/ui/card";
-import ReserveRoom from "@/src/features/home/reserveroom";
-import BookRoomDialog from "@/src/features/home/bookroomdialog";
-import Release from "@/src/features/home/Release";
-import ReservedCheckIn from "@/src/features/home/reservedcheckin";
-import StayOver from "@/src/features/home/stayover";
-import CheckOut from "@/src/features/home/CheckOut";
+import ReserveRoom from "@/src/components/features/home/reserveroom";
+import BookRoomDialog from "@/src/components/features/home/bookroomdialog";
+import Release from "@/src/components/features/home/Release";
+import ReservedCheckIn from "@/src/components/features/home/reservedcheckin";
+import StayOver from "@/src/components/features/home/stayover";
+import CheckOut from "@/src/components/features/home/CheckOut";
 
 const getRoomIcon = (type: RoomType) => {
   switch (type) {

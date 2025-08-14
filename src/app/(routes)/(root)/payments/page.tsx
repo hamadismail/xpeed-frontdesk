@@ -20,9 +20,14 @@ import {
   Search,
 } from "lucide-react";
 import { Skeleton } from "@/src/components/ui/skeleton";
-import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
-import PaymentModal from "../../../../features/payments/PaymentModal";
+import PaymentModal from "@/src/components/features/payments/PaymentModal";
 
 interface GuestPayment {
   _id: string;
@@ -261,7 +266,7 @@ export default function PaymentTable() {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <PaymentModal guest={guest}/>
+                    <PaymentModal guest={guest} />
                   </TableCell>
                 </TableRow>
               ))
