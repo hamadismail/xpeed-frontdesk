@@ -5,22 +5,28 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { z } from "zod";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Check,
-} from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarIcon, Check } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/src/components/ui/form";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/src/components/ui/popover";
+import { format } from "date-fns";
+import { Calendar } from "@/src/components/ui/calendar";
+import { Textarea } from "@/src/components/ui/textarea";
+import ReservationInvoive from "@/src/components/layout/ReservationInvoive";
 
 const formSchema = z.object({
   // Guest Info
@@ -41,10 +47,10 @@ const formSchema = z.object({
   otherGuest: z.string().optional(),
 
   // Payment Info
-  bookingFee: z.number().optional(),
-  sst: z.number().optional(),
-  tourismTax: z.number().optional(),
-  discount: z.number().optional(),
+  bookingFee: z.string().optional(),
+  sst: z.string().optional(),
+  tourismTax: z.string().optional(),
+  discount: z.string().optional(),
   pricingPolicy: z.string().optional(),
   netPriceInWord: z.string().optional(),
   paymentStatus: z.string().optional(),
@@ -74,10 +80,10 @@ export default function Reservation() {
       otherGuest: "",
 
       // Payment Info
-      bookingFee: undefined,
-      sst: undefined,
-      tourismTax: undefined,
-      discount: undefined,
+      bookingFee: "",
+      sst: "",
+      tourismTax: "",
+      discount: "",
       pricingPolicy: "",
       netPriceInWord: "",
       paymentStatus: "",
@@ -85,7 +91,7 @@ export default function Reservation() {
   });
 
   const onSubmit = (data: z.infer<typeof formSchema>) => {
-    console.log(data, "gekkk");
+    console.log(data);
   };
 
   const { trigger } = form;
@@ -141,7 +147,7 @@ export default function Reservation() {
               </div>
               <span className="text-xs mt-1 text-muted-foreground">
                 {stepNumber === 1 && "Guest"}
-                {stepNumber === 2 && "Dates"}
+                {stepNumber === 2 && "Room"}
                 {stepNumber === 3 && "Payment"}
                 {stepNumber === 4 && "Confirm"}
               </span>
@@ -214,6 +220,66 @@ export default function Reservation() {
                       </FormItem>
                     )}
                   />
+
+                  {/* Guest Email  */}
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="text"
+                            placeholder="Type guest phone number"
+                            {...field}
+                            className="bg-white"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Guest Passport  */}
+                  <FormField
+                    control={form.control}
+                    name="passport"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>IC/Passport</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="text"
+                            placeholder="Type guest phone number"
+                            {...field}
+                            className="bg-white"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Guest Nationality  */}
+                  <FormField
+                    control={form.control}
+                    name="nationality"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nationality</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="text"
+                            placeholder="Type guest phone number"
+                            {...field}
+                            className="bg-white"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
 
                 <div className="flex justify-end gap-2 mt-4">
@@ -228,13 +294,13 @@ export default function Reservation() {
             {step === 2 && (
               <div className="grid gap-4">
                 <div className="grid sm:grid-cols-3 gap-4">
-                  {/* Guest Reservation No. */}
+                  {/* Room No. */}
                   <FormField
                     control={form.control}
-                    name="reservationNo"
+                    name="roomNo"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Reservation No.*</FormLabel>
+                        <FormLabel>Room No.</FormLabel>
                         <FormControl>
                           <Input
                             type="text"
@@ -247,10 +313,179 @@ export default function Reservation() {
                       </FormItem>
                     )}
                   />
+
+                  {/* Number of Guests. */}
+                  <FormField
+                    control={form.control}
+                    name="numOfGuest"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Number of Guests</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="text"
+                            placeholder="Type number of guests."
+                            {...field}
+                            className="bg-white"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Arrival Date */}
+                  <FormField
+                    control={form.control}
+                    name="arrivalDate"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel>Arrivale Date *</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant={"outline"}
+                                className={cn(
+                                  "w-[240px] pl-3 text-left font-normal",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                              >
+                                {field.value ? (
+                                  format(field.value, "PPP")
+                                ) : (
+                                  <span>Pick a date</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent
+                            className="w-auto max-h-[280px] overflow-y-auto p-0"
+                            align="start"
+                          >
+                            <Calendar
+                              mode="single"
+                              selected={field.value}
+                              onSelect={field.onChange}
+                              // captionLayout="dropdown"
+                              disabled={{
+                                before: new Date(),
+                              }}
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <FormDescription className="sr-only">
+                          Your date is used.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Departure Date */}
+                  <FormField
+                    control={form.control}
+                    name="departureDate"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel>Departure Date *</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant={"outline"}
+                                className={cn(
+                                  "w-[240px] pl-3 text-left font-normal",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                              >
+                                {field.value ? (
+                                  format(field.value, "PPP")
+                                ) : (
+                                  <span>Pick a date</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent
+                            className="w-auto p-0 max-h-[280px] overflow-y-auto"
+                            align="start"
+                          >
+                            <Calendar
+                              mode="single"
+                              selected={field.value}
+                              onSelect={field.onChange}
+                              // captionLayout="dropdown"
+                              disabled={{
+                                before: form.watch("arrivalDate") || new Date(),
+                              }}
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <FormDescription className="sr-only">
+                          Your date is used.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Room Details */}
+                  <FormField
+                    control={form.control}
+                    name="roomDetails"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Room Details</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Your room details"
+                            className="resize-none"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription className="sr-only">
+                          You can <span>@mention</span> other users and
+                          organizations.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Other Guests */}
+                  <FormField
+                    control={form.control}
+                    name="otherGuest"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Other Guests</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Your guests info"
+                            className="resize-none"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription className="sr-only">
+                          You can <span>@mention</span> other users and
+                          organizations.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
 
                 <div className="flex justify-end gap-2 mt-4">
-                  <Button type="button" onClick={handleBack} className="gap-1">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleBack}
+                    className="gap-1"
+                  >
                     <ArrowLeft className="h-4 w-4" /> Back
                   </Button>
                   <Button type="button" onClick={handleNext} className="gap-1">
@@ -264,17 +499,137 @@ export default function Reservation() {
             {step === 3 && (
               <div className="grid gap-4">
                 <div className="grid sm:grid-cols-3 gap-4">
-                  {/* Guest Reservation No. */}
+                  {/* Booking Fee */}
                   <FormField
                     control={form.control}
-                    name="reservationNo"
+                    name="bookingFee"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Reservation No.*</FormLabel>
+                        <FormLabel>Booking Fees</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            placeholder="Type booking fee."
+                            {...field}
+                            className="bg-white"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* SST */}
+                  <FormField
+                    control={form.control}
+                    name="sst"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>SST (8%)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            placeholder="Type sst fee."
+                            {...field}
+                            className="bg-white"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Tourism Tax */}
+                  <FormField
+                    control={form.control}
+                    name="tourismTax"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Tourism Tax</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            placeholder="Type tourism tax"
+                            {...field}
+                            className="bg-white"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* FnF Discount */}
+                  <FormField
+                    control={form.control}
+                    name="discount"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>FnF Discount</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            placeholder="Enter discount amount"
+                            {...field}
+                            className="bg-white"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Net Price in Words */}
+                  <FormField
+                    control={form.control}
+                    name="netPriceInWord"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Net Price In Words</FormLabel>
                         <FormControl>
                           <Input
                             type="text"
-                            placeholder="Type guest reservation no."
+                            placeholder="Enter net price in word"
+                            {...field}
+                            className="bg-white"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Payment Status */}
+                  <FormField
+                    control={form.control}
+                    name="paymentStatus"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Payment Status</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="text"
+                            placeholder="Type Payment Status"
+                            {...field}
+                            className="bg-white"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Payment Status */}
+                  <FormField
+                    control={form.control}
+                    name="pricingPolicy"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Pricing Policy</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="text"
+                            placeholder="Type Pricing Policy"
                             {...field}
                             className="bg-white"
                           />
@@ -286,7 +641,12 @@ export default function Reservation() {
                 </div>
 
                 <div className="flex justify-end gap-2 mt-4">
-                  <Button type="button" onClick={handleBack} className="gap-1">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleBack}
+                    className="gap-1"
+                  >
                     <ArrowLeft className="h-4 w-4" /> Back
                   </Button>
                   <Button type="button" onClick={handleNext} className="gap-1">
@@ -298,28 +658,47 @@ export default function Reservation() {
 
             {/* Step 4: Confirmation */}
             {step === 4 && (
-              <div className="grid gap-6 overflow-scroll max-h-80">
-                {/* <Invoice bookingInfo={} /> */}
-
-                <div className="flex justify-between gap-2 mt-4">
-                  <Button
-                    variant="outline"
-                    onClick={handleBack}
-                    className="gap-1"
-                  >
-                    <ArrowLeft className="h-4 w-4" /> Back
-                  </Button>
-                  <Button
-                    type="submit"
-                    // onClick={() => bookRoom()}
-                    // disabled={isPending}
-                    className="gap-1"
-                  >
-                    {/* {isPending ? "Processing..." : "Confirm Booking"} */}
-                    {/* {!isPending && <Check className="h-4 w-4" />} */}
-                    Submit
-                  </Button>
-                </div>
+              <div className="grid gap-6 overflow-auto max-h-80">
+                <ReservationInvoive
+                  bookingInfo={{
+                    guest: {
+                      reservationNo: form.getValues("reservationNo"),
+                      name: form.getValues("name"),
+                      email: form.getValues("email"),
+                      phone: form.getValues("phone"),
+                      nationality: form.getValues("nationality"),
+                      passport: form.getValues("passport"),
+                    },
+                    room: {
+                      roomNo: form.getValues("roomNo"),
+                      numOfGuest: form.getValues("numOfGuest"),
+                      arrival: form.getValues("arrivalDate") || new Date(),
+                      departure: form.getValues("departureDate") || new Date(),
+                      roomDetails: form.getValues("roomDetails"),
+                      otherGuest: form.getValues("otherGuest"),
+                    },
+                    payment: {
+                      bookingFee: parseFloat(
+                        form.getValues("bookingFee") || "0"
+                      ),
+                      sst: parseFloat(form.getValues("sst") || "0"),
+                      tourismTax: parseFloat(
+                        form.getValues("tourismTax") || "0"
+                      ),
+                      fnfDiscount: parseFloat(
+                        form.getValues("discount") || "0"
+                      ),
+                      totalAmount:
+                        parseFloat(form.getValues("bookingFee") || "0") +
+                        parseFloat(form.getValues("sst") || "0") +
+                        parseFloat(form.getValues("tourismTax") || "0") -
+                        parseFloat(form.getValues("discount") || "0"),
+                    },
+                    bookingDate: new Date().toLocaleDateString(),
+                  }}
+                  onConfirmBooking={form.handleSubmit(onSubmit)}
+                  onBack={handleBack}
+                />
               </div>
             )}
           </form>
