@@ -8,7 +8,7 @@ import {
   Hotel,
   Crown,
   Home,
-  Layers,
+  // Layers,
   Circle,
   CheckCircle,
   XCircle,
@@ -31,10 +31,7 @@ import {
 } from "@/src/components/ui/select";
 import { Button } from "@/src/components/ui/button";
 import { Card } from "@/src/components/ui/card";
-import ReserveRoom from "@/src/components/features/home/reserveroom";
 import BookRoomDialog from "@/src/components/features/home/bookroomdialog";
-import Release from "@/src/components/features/home/Release";
-import ReservedCheckIn from "@/src/components/features/home/reservedcheckin";
 import StayOver from "@/src/components/features/home/stayover";
 import CheckOut from "@/src/components/features/home/CheckOut";
 
@@ -75,11 +72,7 @@ export default function AllRooms() {
     (room) => room.roomStatus === RoomStatus.OCCUPIED
   ).length;
 
-  const reservedCount = allRooms.filter(
-    (room) => room.roomStatus === RoomStatus.RESERVED
-  ).length;
-
-  const availableCount = allRooms.length - (occupiedCount + reservedCount);
+  const availableCount = allRooms.length - occupiedCount;
 
   if (isLoading) {
     return (
@@ -136,15 +129,6 @@ export default function AllRooms() {
             </Badge>
           </div>
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 text-yellow-600">
-              <Clock className="h-4 w-4" />
-              <span className="font-medium">Reserved:</span>
-            </div>
-            <Badge className="px-3 py-1 bg-yellow-600 hover:bg-yellow-700">
-              {reservedCount}
-            </Badge>
-          </div>
-          <div className="flex items-center gap-2">
             <div className="flex items-center gap-1 text-green-500">
               <CheckCircle className="h-4 w-4" />
               <span className="font-medium">Available:</span>
@@ -158,7 +142,7 @@ export default function AllRooms() {
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4 p-4 bg-muted/50 rounded-lg">
-        <div className="flex-1">
+        {/* <div className="flex-1">
           <Label className="flex items-center gap-2 mb-2">
             <Layers className="h-4 w-4" />
             Floor
@@ -177,7 +161,7 @@ export default function AllRooms() {
               <SelectItem value="3">3rd Floor</SelectItem>
             </SelectContent>
           </Select>
-        </div>
+        </div> */}
 
         <div className="flex-1">
           <Label className="flex items-center gap-2 mb-2">
@@ -231,12 +215,12 @@ export default function AllRooms() {
               >
                 <CheckCircle className="h-4 w-4" /> Available
               </SelectItem>
-              <SelectItem
+              {/* <SelectItem
                 value={RoomStatus.RESERVED}
                 className="flex items-center gap-2"
               >
                 <Clock className="h-4 w-4" /> Reserved
-              </SelectItem>
+              </SelectItem> */}
               <SelectItem
                 value={RoomStatus.OCCUPIED}
                 className="flex items-center gap-2"
@@ -274,10 +258,8 @@ export default function AllRooms() {
             <Card
               key={room._id?.toString()}
               className={`p-4 transition-all hover:shadow-lg ${
-                room.roomStatus === RoomStatus.AVAILABLE
+                room.roomStatus !== RoomStatus.OCCUPIED
                   ? "border-green-200 dark:border-green-900"
-                  : room.roomStatus === RoomStatus.RESERVED
-                  ? "border-yellow-200 dark:border-yellow-800"
                   : "border-red-200 dark:border-red-900"
               }`}
             >
@@ -288,23 +270,20 @@ export default function AllRooms() {
                 </h3>
                 <Badge
                   variant={
-                    room.roomStatus === RoomStatus.AVAILABLE
+                    room.roomStatus !== RoomStatus.OCCUPIED
                       ? "default"
-                      : room.roomStatus === RoomStatus.RESERVED
-                      ? "outline"
                       : "destructive"
                   }
                   className={`flex items-center gap-1 ${
-                    room.roomStatus === RoomStatus.RESERVED
-                      ? "bg-yellow-100 text-yellow-800 border-yellow-300"
-                      : room.roomStatus === RoomStatus.AVAILABLE
+                    room.roomStatus !== RoomStatus.OCCUPIED
                       ? "bg-green-100 text-green-800 border-green-300"
                       : ""
                   }`}
                 >
                   <Circle className="h-2 w-2 fill-current" />
-                  {room.roomStatus.charAt(0).toUpperCase() +
-                    room.roomStatus.slice(1)}
+                  {room.roomStatus === RoomStatus.OCCUPIED
+                    ? "OCCUPIED"
+                    : "AVAILABLE"}
                 </Badge>
               </div>
 
@@ -321,15 +300,17 @@ export default function AllRooms() {
 
               {/* Button Container */}
               <div className="flex justify-around gap-2">
-                {room.roomStatus === RoomStatus.AVAILABLE ? (
+                {room.roomStatus !== RoomStatus.OCCUPIED ? (
                   <>
-                    <ReserveRoom room={room} />
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="h-8 px-3 gap-1 "
+                    >
+                      <Clock className="h-4 w-4" />
+                      <span>Info</span>
+                    </Button>
                     <BookRoomDialog room={room} />
-                  </>
-                ) : room.roomStatus === RoomStatus.RESERVED ? (
-                  <>
-                    <Release room={room} />
-                    <ReservedCheckIn room={room} />
                   </>
                 ) : (
                   <>

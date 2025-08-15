@@ -40,6 +40,7 @@ export async function POST(req: NextRequest) {
 
     // Mark room as booked
     room.roomStatus = RoomStatus.OCCUPIED;
+    room.isBooked = true;
     room.guestId = newBooking?._id;
     await room.save();
 

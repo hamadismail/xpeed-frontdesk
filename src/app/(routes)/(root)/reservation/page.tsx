@@ -5,7 +5,13 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { z } from "zod";
-import { ArrowLeft, ArrowRight, CalendarIcon, Check } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  CalendarIcon,
+  Check,
+  ChevronsUpDown,
+} from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
@@ -27,6 +33,16 @@ import { format } from "date-fns";
 import { Calendar } from "@/src/components/ui/calendar";
 import { Textarea } from "@/src/components/ui/textarea";
 import ReservationInvoive from "@/src/components/layout/ReservationInvoive";
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
+import { IRoom } from "@/src/models/room.model";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/src/components/ui/command";
 
 const formSchema = z.object({
   // Guest Info
@@ -58,6 +74,19 @@ const formSchema = z.object({
 
 export default function Reservation() {
   const [step, setStep] = useState(1);
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+
+  const { data: rooms, isLoading } = useQuery<IRoom[]>({
+    queryKey: ["rooms", query],
+    queryFn: async () => {
+      const res = await axios.get(`/api/rooms`, {
+        params: { search: query }, // automatically builds ?search=value
+      });
+      return res.data;
+    },
+    enabled: query.length > 0, // only fetch if query is not empty
+  });
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -299,16 +328,64 @@ export default function Reservation() {
                     control={form.control}
                     name="roomNo"
                     render={({ field }) => (
-                      <FormItem>
+                      <FormItem className="flex flex-col">
                         <FormLabel>Room No.</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="text"
-                            placeholder="Type guest reservation no."
-                            {...field}
-                            className="bg-white"
-                          />
-                        </FormControl>
+                        <Popover open={open} onOpenChange={setOpen}>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                className={cn(
+                                  "w-full justify-between",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                              >
+                                {field.value
+                                  ? rooms?.find(
+                                      (room) => room.roomNo === field.value
+                                    )?.roomNo || field.value
+                                  : "Select room"}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[250px] p-0">
+                            <Command>
+                              <CommandInput
+                                placeholder="Search room..."
+                                value={query}
+                                onValueChange={setQuery}
+                              />
+                              <CommandEmpty>
+                                {isLoading ? "Loading..." : "No room found"}
+                              </CommandEmpty>
+                              <CommandGroup>
+                                {rooms?.map((room) => (
+                                  <CommandItem
+                                    value={room.roomNo}
+                                    key={room._id?.toString()}
+                                    onSelect={() => {
+                                      form.setValue("roomNo", room.roomNo);
+                                      setOpen(false);
+                                      setQuery("");
+                                    }}
+                                  >
+                                    <Check
+                                      className={cn(
+                                        "mr-2 h-4 w-4",
+                                        room.roomNo === field.value
+                                          ? "opacity-100"
+                                          : "opacity-0"
+                                      )}
+                                    />
+                                    {room.roomNo} - {room.roomType}
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -347,7 +424,7 @@ export default function Reservation() {
                               <Button
                                 variant={"outline"}
                                 className={cn(
-                                  "w-[240px] pl-3 text-left font-normal",
+                                  "pl-3 text-left font-normal",
                                   !field.value && "text-muted-foreground"
                                 )}
                               >
@@ -396,7 +473,7 @@ export default function Reservation() {
                               <Button
                                 variant={"outline"}
                                 className={cn(
-                                  "w-[240px] pl-3 text-left font-normal",
+                                  "pl-3 text-left font-normal",
                                   !field.value && "text-muted-foreground"
                                 )}
                               >
