@@ -1,10 +1,12 @@
 import { Schema, model, models, Types } from "mongoose";
 
 export enum RoomType {
-  SINGLE = "Single",
-  TWIN = "Twin",
-  QUEEN = "Queen",
-  SUITE = "Suite",
+  SQUEEN = "Standard Queen Room",
+  DTWIN = "Delux Twin Room",
+  DQUEEN = "Delux Queen Room",
+  DTRIPPLE = "Deluxe Triple Room",
+  SFAMILLY = "Superior Family Room",
+  DFAMILLY = "Deluxe Family Room",
 }
 
 export enum RoomStatus {

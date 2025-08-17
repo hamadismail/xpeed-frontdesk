@@ -23,10 +23,8 @@ import { Label } from "@/src/components/ui/label";
 import { toast } from "sonner";
 import { createRoom } from "@/src/services/actions";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { RoomType } from "@/src/models/room.model";
 
-type RoomType = "Single" | "Twin" | "Queen" | "Suite";
-
-// type RoomData = Pick<Room, "roomNo" | "roomType" | "roomFloor">;
 type RoomData = {
   roomNo: string;
   roomType: RoomType;
@@ -38,7 +36,7 @@ export default function AddRoomDialog() {
   // const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     roomNo: "",
-    roomType: "Single" as RoomType,
+    roomType: RoomType.DQUEEN,
     roomFloor: "1",
   });
   const queryClient = useQueryClient();
@@ -54,7 +52,7 @@ export default function AddRoomDialog() {
       }
       queryClient.invalidateQueries({ queryKey: ["rooms"] });
       toast.success("Room added successfully");
-      setFormData({ roomNo: "", roomType: "Single", roomFloor: "1" });
+      setFormData({ roomNo: "", roomType: RoomType.SQUEEN, roomFloor: "1" });
       setOpen(false);
     },
     // onError: (error) => {},
@@ -120,21 +118,37 @@ export default function AddRoomDialog() {
                   <SelectValue placeholder="Select room type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem
-                    value="Single"
-                    className="flex items-center gap-2"
-                  >
-                    <BedSingle className="h-4 w-4" /> Single
-                  </SelectItem>
-                  <SelectItem value="Twin" className="flex items-center gap-2">
-                    <BedDouble className="h-4 w-4" /> Twin
-                  </SelectItem>
-                  <SelectItem value="Queen" className="flex items-center gap-2">
-                    <Crown className="h-4 w-4" /> Queen
-                  </SelectItem>
-                  <SelectItem value="Suite" className="flex items-center gap-2">
-                    <Hotel className="h-4 w-4" /> Suite
-                  </SelectItem>
+                  {Object.entries(RoomType).map(([key, label]) => {
+                    // Optional: choose icon based on key
+                    let Icon;
+                    switch (key) {
+                      case "SQUEEN":
+                      case "DQUEEN":
+                        Icon = Crown;
+                        break;
+                      case "DTWIN":
+                        Icon = BedDouble;
+                        break;
+                      case "DTRIPPLE":
+                        Icon = Hotel;
+                        break;
+                      case "SFAMILLY":
+                      case "DFAMILLY":
+                        Icon = BedSingle;
+                        break;
+                      default:
+                        Icon = null;
+                    }
+                    return (
+                      <SelectItem
+                        key={key}
+                        value={label}
+                        className="flex items-center gap-2"
+                      >
+                        {Icon && <Icon className="h-4 w-4" />} {label}
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>
@@ -152,6 +166,8 @@ export default function AddRoomDialog() {
                   <SelectItem value="1">1st Floor</SelectItem>
                   <SelectItem value="2">2nd Floor</SelectItem>
                   <SelectItem value="3">3rd Floor</SelectItem>
+                  <SelectItem value="4">4th Floor</SelectItem>
+                  <SelectItem value="5">5th Floor</SelectItem>
                 </SelectContent>
               </Select>
             </div>

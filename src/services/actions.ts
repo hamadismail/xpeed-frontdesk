@@ -1,9 +1,7 @@
 "use server";
 
 import { connectDB } from "@/src/lib/mongoose";
-import { Room } from "@/src/models/room.model";
-
-type RoomType = "Single" | "Twin" | "Queen" | "Suite";
+import { Room, RoomType } from "@/src/models/room.model";
 
 interface RoomData {
   roomNo: string;

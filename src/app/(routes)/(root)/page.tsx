@@ -15,6 +15,7 @@ import {
   Clock,
   User2,
   ListChecks,
+  Layers,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
@@ -34,21 +35,7 @@ import { Card } from "@/src/components/ui/card";
 import BookRoomDialog from "@/src/components/features/home/bookroomdialog";
 import StayOver from "@/src/components/features/home/stayover";
 import CheckOut from "@/src/components/features/home/CheckOut";
-
-const getRoomIcon = (type: RoomType) => {
-  switch (type) {
-    case "Single":
-      return <BedSingle className="h-5 w-5" />;
-    case "Twin":
-      return <BedDouble className="h-5 w-5" />;
-    case "Queen":
-      return <Crown className="h-5 w-5" />;
-    case "Suite":
-      return <Hotel className="h-5 w-5" />;
-    default:
-      return <BedSingle className="h-5 w-5" />;
-  }
-};
+import { getRoomIcon } from "@/src/utils/getRoomIcon";
 
 export default function AllRooms() {
   const [floorFilter, setFloorFilter] = useState("all");
@@ -142,7 +129,7 @@ export default function AllRooms() {
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4 p-4 bg-muted/50 rounded-lg">
-        {/* <div className="flex-1">
+         <div className="flex-1">
           <Label className="flex items-center gap-2 mb-2">
             <Layers className="h-4 w-4" />
             Floor
@@ -159,9 +146,11 @@ export default function AllRooms() {
               <SelectItem value="1">1st Floor</SelectItem>
               <SelectItem value="2">2nd Floor</SelectItem>
               <SelectItem value="3">3rd Floor</SelectItem>
+              <SelectItem value="4">4th Floor</SelectItem>
+              <SelectItem value="5">5th Floor</SelectItem>
             </SelectContent>
           </Select>
-        </div> */}
+        </div>
 
         <div className="flex-1">
           <Label className="flex items-center gap-2 mb-2">
@@ -177,18 +166,37 @@ export default function AllRooms() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="Single" className="flex items-center gap-2">
-                <BedSingle className="h-4 w-4" /> Single
-              </SelectItem>
-              <SelectItem value="Twin" className="flex items-center gap-2">
-                <BedDouble className="h-4 w-4" /> Twin
-              </SelectItem>
-              <SelectItem value="Queen" className="flex items-center gap-2">
-                <Crown className="h-4 w-4" /> Queen
-              </SelectItem>
-              <SelectItem value="Suite" className="flex items-center gap-2">
-                <Hotel className="h-4 w-4" /> Suite
-              </SelectItem>
+              {Object.entries(RoomType).map(([key, label]) => {
+                // Optional: choose icon based on key
+                let Icon;
+                switch (key) {
+                  case "SQUEEN":
+                  case "DQUEEN":
+                    Icon = Crown;
+                    break;
+                  case "DTWIN":
+                    Icon = BedDouble;
+                    break;
+                  case "DTRIPPLE":
+                    Icon = Hotel;
+                    break;
+                  case "SFAMILLY":
+                  case "DFAMILLY":
+                    Icon = BedSingle;
+                    break;
+                  default:
+                    Icon = null;
+                }
+                return (
+                  <SelectItem
+                    key={key}
+                    value={label}
+                    className="flex items-center gap-2"
+                  >
+                    {Icon && <Icon className="h-4 w-4" />} {label}
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
         </div>
@@ -287,7 +295,7 @@ export default function AllRooms() {
                 </Badge>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 mb-4 text-sm">
+              <div className="flex flex-col gap-2 mb-4 text-sm">
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Home className="h-4 w-4" />
                   <span>Floor {room.roomFloor}</span>
