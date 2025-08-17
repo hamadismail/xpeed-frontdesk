@@ -110,9 +110,7 @@ export default function Reservation() {
     initialData: [],
   });
 
-  const { data: reservedGuests, isLoading: reservedLoading } = useQuery<
-    IReservation[]
-  >({
+  const { data: reservedGuests } = useQuery<IReservation[]>({
     queryKey: ["reserve", reserveQuery],
     queryFn: () => fetchReservedGuests(reserveQuery),
     enabled: reserveQuery.length > 0, // only fetch if query is not empty
