@@ -65,7 +65,7 @@ export default function ReservationInvoice({
         <CardHeader className="text-center">
           {/* <h1 className="text-2xl font-bold">Orkid Hills</h1> */}
           <Image
-            src="/img/orkidhill.png"
+            src="/img/ecoHotel.png"
             alt="Orkid Hills Logo"
             width={500}
             height={150}
@@ -73,17 +73,17 @@ export default function ReservationInvoice({
           />
           <Separator className="my-2 w-3/4 mx-auto" />
           <div className="text-xs text-muted-foreground">
-            <p>300, Jalan Pudu, Pudu, 55100, Kuala Lumpur</p>
+            <p>179, Jalan Pudu, Pudu-55100 Kuala Lumpur, Malaysia</p>
             <p>
-              Hotline: +60 129383004, +60 178988418 | Email:
-              orkidhills@gmail.com
+              Hotline:  +601116962002, +60178988418 | Email:
+              ecohotel.bb@gmail.com
             </p>
           </div>
         </CardHeader>
 
         <CardContent>
           {/* Guest and Booking Info */}
-          <div className="grid sm:grid-cols-2 justify-items-center">
+          <div className="grid grid-cols-2 justify-items-center">
             <div>
               <h2 className="text-lg font-semibold mb-2">Guest Details</h2>
               <div className="grid grid-cols-[auto_1fr] gap-2 text-sm">
@@ -271,7 +271,11 @@ export default function ReservationInvoice({
         <Button variant="outline" onClick={onBack}>
           Back
         </Button>
-        <Button type="button" onClick={handleConfirmAndPrint} disabled={isPending}>
+        <Button
+          type="button"
+          onClick={handleConfirmAndPrint}
+          disabled={isPending}
+        >
           {isPending ? "Loading..." : "Confirm Booking"}
         </Button>
       </div>

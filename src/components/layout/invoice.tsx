@@ -72,6 +72,12 @@ export function Invoice({
         body {
           -webkit-print-color-adjust: exact;
         }
+        @page {
+          margin: 0;
+          size: auto;
+        }
+        @page :footer { display: none; }
+        @page :header { display: none; }
       }
     `,
   });
@@ -110,19 +116,22 @@ export function Invoice({
 
       <div
         ref={contentRef}
-        className="bg-white text-gray-800 p-8 max-w-3xl w-full rounded-lg shadow-lg border"
+        className="bg-white text-gray-800 p-8 max-w-3xl w-full"
       >
         {/* Header */}
         <div className="flex justify-between items-start border-b pb-6 mb-6">
           <div>
             <div className="flex items-center gap-2 mb-2">
               <Hotel className="h-8 w-8 text-primary" />
-              <h1 className="text-2xl font-bold">Luxury Hotel</h1>
+              <h1 className="text-2xl font-bold">Eco Hotel @ Bukit Bintang</h1>
             </div>
             <p className="text-muted-foreground">
-              123 Resort Avenue, Paradise City
+              179, Jalan Pudu, Pudu-55100 Kuala Lumpur, Malaysia
             </p>
-            <p className="text-muted-foreground">Phone: +1 (555) 123-4567</p>
+            <p className="text-muted-foreground">
+              Phone: +601116962002, +60178988418 | Email:
+              ecohotel.bb@gmail.com
+            </p>
           </div>
 
           <div className="text-right">
@@ -141,7 +150,7 @@ export function Invoice({
         </div>
 
         {/* Guest and Booking Info */}
-        <div className="grid sm:grid-cols-2 gap-8 mb-8">
+        <div className="grid grid-cols-2 gap-8 mb-8">
           <div>
             <h3 className="flex items-center gap-2 text-lg font-semibold mb-3">
               <User className="h-5 w-5 text-primary" />
@@ -298,7 +307,7 @@ export function Invoice({
 
         {/* Footer */}
         <div className="border-t pt-4 text-center text-sm text-muted-foreground">
-          <p>Thank you for choosing Xpeed Holiday Hotel!</p>
+          <p>Thank you for choosing Eco Hotel @ Bukit Bintang!</p>
           {/* <p className="mt-1">
             For any inquiries, please contact reservations@xpeedholiday.com
           </p>

@@ -80,7 +80,7 @@ export default function CheckOut({ room }: { room: IRoom }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" variant="default" className="h-8 px-3 gap-1">
+        <Button size="sm" variant="default" className="h-8 px-3 gap-1 text-xs">
           <LogOut className="h-4 w-4" />
           <span>CheckOut</span>
         </Button>
