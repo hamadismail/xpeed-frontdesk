@@ -11,11 +11,11 @@ import {
   DialogTrigger,
 } from "@/src/components/ui/dialog";
 import { Input } from "@/src/components/ui/input";
-import { BedDouble, BedSingle, Crown, Hotel, Calendar } from "lucide-react";
+import { BedDouble, Calendar } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import axios from "axios";
-import { IRoom, RoomType } from "@/src/models/room.model";
+import { IRoom } from "@/src/models/room.model";
 import { Calendar as DatePicker } from "@/src/components/ui/calendar";
 import { format } from "date-fns";
 import {
@@ -26,21 +26,7 @@ import {
 import { cn } from "@/src/lib/utils";
 import { Label } from "@/src/components/ui/label";
 import { IBook } from "@/src/models/book.model";
-
-const getRoomIcon = (type: RoomType) => {
-  switch (type) {
-    case "Single":
-      return <BedSingle className="h-5 w-5" />;
-    case "Twin":
-      return <BedDouble className="h-5 w-5" />;
-    case "Queen":
-      return <Crown className="h-5 w-5" />;
-    case "Suite":
-      return <Hotel className="h-5 w-5" />;
-    default:
-      return <BedSingle className="h-5 w-5" />;
-  }
-};
+import { getRoomIcon } from "@/src/utils/getRoomIcon";
 
 export default function StayOver({ room }: { room: IRoom }) {
   const queryClient = useQueryClient();

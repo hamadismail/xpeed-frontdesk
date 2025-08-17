@@ -12,28 +12,15 @@ import {
   DialogTrigger,
 } from "@/src/components/ui/dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/src/components/ui/alert";
-import { BedDouble, BedSingle, Crown, Hotel, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import axios from "axios";
-import { IRoom, RoomType } from "@/src/models/room.model";
+import { IRoom } from "@/src/models/room.model";
 import { GUEST_STATUS } from "@/src/models/book.model";
 import PaymentModal from "../payments/PaymentModal";
+import { getRoomIcon } from "@/src/utils/getRoomIcon";
 
-const getRoomIcon = (type: RoomType) => {
-  switch (type) {
-    case "Single":
-      return <BedSingle className="h-5 w-5" />;
-    case "Twin":
-      return <BedDouble className="h-5 w-5" />;
-    case "Queen":
-      return <Crown className="h-5 w-5" />;
-    case "Suite":
-      return <Hotel className="h-5 w-5" />;
-    default:
-      return <BedSingle className="h-5 w-5" />;
-  }
-};
 
 export default function CheckOut({ room }: { room: IRoom }) {
   const queryClient = useQueryClient();
