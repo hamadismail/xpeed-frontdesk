@@ -17,7 +17,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import axios from "axios";
 import { IRoom, RoomType } from "@/src/models/room.model";
-import { GUEST_STATUS, IBook } from "@/src/models/book.model";
+import { GUEST_STATUS } from "@/src/models/book.model";
+import PaymentModal from "../payments/PaymentModal";
 
 const getRoomIcon = (type: RoomType) => {
   switch (type) {
@@ -39,7 +40,7 @@ export default function CheckOut({ room }: { room: IRoom }) {
   const [open, setOpen] = useState(false);
   const [acknowledged, setAcknowledged] = useState(false);
 
-  const { data: singleGuest } = useQuery<IBook>({
+  const { data: singleGuest } = useQuery({
     queryKey: ["books", room?.guestId],
     queryFn: () =>
       axios.get(`/api/stayover/${room?.guestId}`).then((res) => res.data),
@@ -156,6 +157,7 @@ export default function CheckOut({ room }: { room: IRoom }) {
             <Button variant="outline" onClick={() => setOpen(false)}>
               Cancel
             </Button>
+            <PaymentModal guest={singleGuest} />
             <Button
               onClick={handleCheckout}
               disabled={isPending || (hasDueAmount && !acknowledged)}

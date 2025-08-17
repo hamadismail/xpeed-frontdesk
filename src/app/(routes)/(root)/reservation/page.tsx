@@ -33,7 +33,7 @@ import { format } from "date-fns";
 import { Calendar } from "@/src/components/ui/calendar";
 import { Textarea } from "@/src/components/ui/textarea";
 import ReservationInvoive from "@/src/components/layout/ReservationInvoive";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { IRoom } from "@/src/models/room.model";
 import {
@@ -76,6 +76,7 @@ export default function Reservation() {
   const [step, setStep] = useState(1);
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
+  const queryClient = useQueryClient();
 
   const { data: rooms, isLoading } = useQuery<IRoom[]>({
     queryKey: ["rooms", query],
@@ -86,6 +87,50 @@ export default function Reservation() {
       return res.data;
     },
     enabled: query.length > 0, // only fetch if query is not empty
+  });
+
+  const { mutate: reserveRoom, isPending } = useMutation({
+    mutationFn: async (data: z.infer<typeof formSchema>) => {
+      const payload = {
+        guest: {
+          reservationNo: data.reservationNo,
+          name: data.name,
+          email: data.email,
+          phone: data.phone,
+          nationality: data.nationality,
+          passport: data.passport,
+        },
+        room: {
+          roomNo: data.roomNo,
+          numOfGuest: data.numOfGuest,
+          arrival: data.arrivalDate,
+          departure: data.departureDate,
+          roomDetails: data.roomDetails,
+          otherGuest: data.otherGuest,
+        },
+        payment: {
+          bookingFee: data.bookingFee,
+          sst: data.sst,
+          tourismTax: data.tourismTax,
+          fnfDiscount: data.discount,
+          pricingPolicy: data.pricingPolicy,
+          netPriceInWord: data.netPriceInWord,
+          paymentStatus: data.paymentStatus,
+        },
+        reservationDate: new Date().toISOString(),
+      };
+      const res = await axios.post("/api/reserve", { payload });
+      return res.data;
+    },
+    onSuccess: () => {
+      toast.success("Room reserved successfully!");
+      queryClient.invalidateQueries({ queryKey: ["reserve"] });
+    },
+    onError: (error) => {
+      toast.error("Booking failed", {
+        description: error?.message || "Something went wrong",
+      });
+    },
   });
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -120,7 +165,7 @@ export default function Reservation() {
   });
 
   const onSubmit = (data: z.infer<typeof formSchema>) => {
-    console.log(data);
+    reserveRoom(data);
   };
 
   const { trigger } = form;
@@ -771,10 +816,11 @@ export default function Reservation() {
                         parseFloat(form.getValues("tourismTax") || "0") -
                         parseFloat(form.getValues("discount") || "0"),
                     },
-                    bookingDate: new Date().toLocaleDateString(),
+                    reservationDate: new Date().toLocaleString(),
                   }}
                   onConfirmBooking={form.handleSubmit(onSubmit)}
                   onBack={handleBack}
+                  isPending={isPending}
                 />
               </div>
             )}

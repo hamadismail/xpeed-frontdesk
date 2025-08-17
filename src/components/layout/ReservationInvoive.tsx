@@ -7,44 +7,20 @@ import { Separator } from "../ui/separator";
 import { Button } from "../ui/button";
 import Image from "next/image";
 import { CircleCheck } from "lucide-react";
-
-interface BookingInfo {
-  guest: {
-    reservationNo: string;
-    name: string;
-    email?: string;
-    phone: string;
-    nationality?: string;
-    passport?: string;
-  };
-  room: {
-    roomNo?: string;
-    numOfGuest?: string;
-    arrival: Date;
-    departure: Date;
-    roomDetails?: string;
-    otherGuest?: string;
-  };
-  payment: {
-    bookingFee: number;
-    sst: number;
-    tourismTax: number;
-    fnfDiscount: number;
-    totalAmount: number;
-  };
-  bookingDate: string;
-}
+import { IReservation } from "@/src/types";
 
 interface ReservationInvoiceProps {
-  bookingInfo: BookingInfo;
+  bookingInfo: IReservation;
   onConfirmBooking: () => void;
   onBack: () => void;
+  isPending: boolean;
 }
 
 export default function ReservationInvoice({
   bookingInfo,
   onConfirmBooking,
   onBack,
+  isPending,
 }: ReservationInvoiceProps) {
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -295,7 +271,9 @@ export default function ReservationInvoice({
         <Button variant="outline" onClick={onBack}>
           Back
         </Button>
-        <Button onClick={handleConfirmAndPrint}>Confirm Booking</Button>
+        <Button type="button" onClick={handleConfirmAndPrint} disabled={isPending}>
+          {isPending ? "Loading..." : "Confirm Booking"}
+        </Button>
       </div>
     </div>
   );

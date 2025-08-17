@@ -1,7 +1,6 @@
 "use server";
 import { connectDB } from "@/src/lib/mongoose";
-import { Book } from "@/src/models/book.model";
-import { Room, RoomStatus } from "@/src/models/room.model";
+import { Reservation } from "@/src/models/reservation.model";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
@@ -9,49 +8,20 @@ export async function POST(req: NextRequest) {
     await connectDB();
 
     const body = await req.json();
-    const { bookingInfo } = body;
-    const { roomId, guest, stay, payment } = bookingInfo;
+    const { payload } = body;
 
-    // Validate required fields
-    if (!roomId || !guest?.name || !guest?.phone) {
-      return NextResponse.json(
-        { message: "Missing required fields (roomId, name, or phone)" },
-        { status: 400 }
-      );
-    }
+    const newReservation = await Reservation.create(payload);
 
-    const room = await Room.findById(roomId);
-    if (!room) {
-      return NextResponse.json({ message: "Room not found" }, { status: 404 });
-    }
-    if (room.isBooked) {
-      return NextResponse.json(
-        { message: "Room already booked" },
-        { status: 409 }
-      );
-    }
-
-    const newBooking = await Book.create({
-      guest,
-      stay,
-      payment,
-      roomId,
+    return NextResponse.json({
+      message: "Room reservers successfully",
+      booking: newReservation,
+      status: 201,
     });
-
-    // Mark room as booked
-    room.roomStatus = RoomStatus.RESERVED;
-    room.guestId = newBooking?._id;
-    await room.save();
-
-    return NextResponse.json(
-      { message: "Room booked successfully", booking: newBooking },
-      { status: 201 }
-    );
   } catch (error) {
-    console.error("Error booking room:", error);
-    return NextResponse.json(
-      { message: "Server error while booking room" },
-      { status: 500 }
-    );
+    return NextResponse.json({
+      message: "Server error while reserving room",
+      status: 500,
+      error,
+    });
   }
 }

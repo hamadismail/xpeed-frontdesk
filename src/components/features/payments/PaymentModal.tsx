@@ -62,7 +62,6 @@ export default function PaymentModal({ guest }: { guest: GuestPayment }) {
       if (!validateForm()) {
         throw new Error("Please fix form errors");
       }
-
       const payload = {
         payment: {
           paidAmount:
@@ -71,13 +70,12 @@ export default function PaymentModal({ guest }: { guest: GuestPayment }) {
           dueAmount: calculateDue(),
         },
       };
-
       const { data } = await axios.patch(`/api/payments/${guest._id}`, payload);
       return data;
     },
     onSuccess: () => {
       toast.success("Payment successful!");
-      queryClient.invalidateQueries({ queryKey: ["payments"] });
+      queryClient.invalidateQueries({ queryKey: ["payments", "rooms"] });
       resetForm();
       setOpen(false);
     },

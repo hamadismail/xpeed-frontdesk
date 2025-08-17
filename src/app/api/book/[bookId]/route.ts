@@ -60,12 +60,6 @@ export async function PATCH(
     if (!room) {
       return NextResponse.json({ message: "Room not found" }, { status: 404 });
     }
-    if (room.isBooked) {
-      return NextResponse.json(
-        { message: "Room already booked" },
-        { status: 409 }
-      );
-    }
 
     const updatedBooking = await Book.findByIdAndUpdate(
       bookId,
