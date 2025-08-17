@@ -35,7 +35,7 @@ import { Textarea } from "@/src/components/ui/textarea";
 import ReservationInvoive from "@/src/components/layout/ReservationInvoive";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { IRoom } from "@/src/models/room.model";
+import { IRoom, RoomStatus } from "@/src/models/room.model";
 import {
   Command,
   CommandEmpty,
@@ -43,10 +43,20 @@ import {
   CommandInput,
   CommandItem,
 } from "@/src/components/ui/command";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
+import { OTAS } from "@/src/models/book.model";
+import { IReservation } from "@/src/types";
 
 const formSchema = z.object({
   // Guest Info
-  reservationNo: z.string().min(1, "Plese Enter the Reservation No."),
+  reservationNo: z.string().optional(),
+  ota: z.string().optional(),
   name: z.string().min(1, "Plese Enter the guest full name."),
   phone: z.string().min(1, "Please type guest phone number"),
   email: z.string().optional(),
@@ -55,15 +65,15 @@ const formSchema = z.object({
   nationality: z.string().optional(),
 
   // Booking Info
-  roomNo: z.string().optional(),
+  roomNo: z.string().min(1, "Room no. is required"),
   numOfGuest: z.string().optional(),
-  arrivalDate: z.date().optional(),
-  departureDate: z.date().optional(),
+  arrivalDate: z.date().min(new Date(), "Arrival date is required"),
+  departureDate: z.date().min(new Date(), "Departure date is required"),
   roomDetails: z.string().optional(),
   otherGuest: z.string().optional(),
 
   // Payment Info
-  bookingFee: z.string().optional(),
+  bookingFee: z.string().min(1, "Booking fee is required"),
   sst: z.string().optional(),
   tourismTax: z.string().optional(),
   discount: z.string().optional(),
@@ -72,28 +82,59 @@ const formSchema = z.object({
   paymentStatus: z.string().optional(),
 });
 
+const fetchRooms = async (query: string) => {
+  const res = await axios.get(`/api/rooms`, {
+    params: { search: query }, // automatically builds ?search=value
+  });
+  return res.data;
+};
+
+const fetchReservedGuests = async (reserveQuery: string) => {
+  const res = await axios.get(`/api/reserve`, {
+    params: { search: reserveQuery }, // automatically builds ?search=value
+  });
+  return res.data;
+};
+
 export default function Reservation() {
   const [step, setStep] = useState(1);
   const [query, setQuery] = useState("");
+  const [reserveQuery, setReserveQuery] = useState("");
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: rooms, isLoading } = useQuery<IRoom[]>({
     queryKey: ["rooms", query],
-    queryFn: async () => {
-      const res = await axios.get(`/api/rooms`, {
-        params: { search: query }, // automatically builds ?search=value
-      });
-      return res.data;
-    },
+    queryFn: () => fetchRooms(query),
     enabled: query.length > 0, // only fetch if query is not empty
+    initialData: [],
   });
+
+  const { data: reservedGuests, isLoading: reservedLoading } = useQuery<
+    IReservation[]
+  >({
+    queryKey: ["reserve", reserveQuery],
+    queryFn: () => fetchReservedGuests(reserveQuery),
+    enabled: reserveQuery.length > 0, // only fetch if query is not empty
+    initialData: [],
+  });
+
+  const allAvailableRooms = rooms.filter(
+    (room) =>
+      room.roomStatus === RoomStatus.AVAILABLE ||
+      room.roomStatus === RoomStatus.RESERVED
+  );
+  const availableRooms = allAvailableRooms.slice(0, 6);
+
+  const reserveArrival = reservedGuests[0]?.room?.arrival;
+  const reserveDeparture = reservedGuests[0]?.room?.departure;
 
   const { mutate: reserveRoom, isPending } = useMutation({
     mutationFn: async (data: z.infer<typeof formSchema>) => {
       const payload = {
         guest: {
           reservationNo: data.reservationNo,
+          ota: data.ota,
           name: data.name,
           email: data.email,
           phone: data.phone,
@@ -120,17 +161,25 @@ export default function Reservation() {
         reservationDate: new Date().toISOString(),
       };
       const res = await axios.post("/api/reserve", { payload });
-      return res.data;
+
+      if (res?.data?.success) {
+        toast.success("Room reserved successfully!");
+        queryClient.invalidateQueries({ queryKey: ["reserve"] });
+      } else {
+        toast.error("Booking failed", {
+          description: res?.data?.error || "Something went wrong",
+        });
+      }
     },
-    onSuccess: () => {
-      toast.success("Room reserved successfully!");
-      queryClient.invalidateQueries({ queryKey: ["reserve"] });
-    },
-    onError: (error) => {
-      toast.error("Booking failed", {
-        description: error?.message || "Something went wrong",
-      });
-    },
+    // onSuccess: () => {
+    //   toast.success("Room reserved successfully!");
+    //   queryClient.invalidateQueries({ queryKey: ["reserve"] });
+    // },
+    // onError: (error) => {
+    //   toast.error("Booking failed", {
+    //     description: error?.message || "Something went wrong",
+    //   });
+    // },
   });
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -138,6 +187,7 @@ export default function Reservation() {
     defaultValues: {
       // Guest Info
       reservationNo: "",
+      ota: "",
       name: "",
       phone: "",
       email: "",
@@ -148,8 +198,8 @@ export default function Reservation() {
       // Booking Info
       roomNo: "",
       numOfGuest: "",
-      arrivalDate: undefined as Date | undefined,
-      departureDate: undefined as Date | undefined,
+      arrivalDate: reserveDeparture,
+      departureDate: reserveDeparture,
       roomDetails: "",
       otherGuest: "",
 
@@ -173,9 +223,9 @@ export default function Reservation() {
     let fieldsToValidate: (keyof z.infer<typeof formSchema>)[] = [];
 
     if (step === 1) {
-      fieldsToValidate = ["reservationNo", "name", "phone"];
+      fieldsToValidate = ["name", "phone"];
     } else if (step === 2) {
-      fieldsToValidate = ["arrivalDate", "departureDate"];
+      fieldsToValidate = ["roomNo", "arrivalDate", "departureDate"];
     } else if (step === 3) {
       fieldsToValidate = ["bookingFee"];
     }
@@ -241,7 +291,7 @@ export default function Reservation() {
                     name="reservationNo"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Reservation No.*</FormLabel>
+                        <FormLabel>Reservation No.</FormLabel>
                         <FormControl>
                           <Input
                             type="text"
@@ -249,6 +299,35 @@ export default function Reservation() {
                             {...field}
                             className="bg-white"
                           />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* OTAs */}
+                  <FormField
+                    control={form.control}
+                    name="ota"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>OTA</FormLabel>
+                        <FormControl>
+                          <Select
+                            value={field.value}
+                            onValueChange={field.onChange}
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select OTA/Reference" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Object.values(OTAS).map((ota) => (
+                                <SelectItem key={ota} value={ota}>
+                                  {ota}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -387,7 +466,7 @@ export default function Reservation() {
                                 )}
                               >
                                 {field.value
-                                  ? rooms?.find(
+                                  ? availableRooms?.find(
                                       (room) => room.roomNo === field.value
                                     )?.roomNo || field.value
                                   : "Select room"}
@@ -400,13 +479,16 @@ export default function Reservation() {
                               <CommandInput
                                 placeholder="Search room..."
                                 value={query}
-                                onValueChange={setQuery}
+                                onValueChange={(val) => {
+                                  setQuery(val);
+                                  setReserveQuery(val);
+                                }}
                               />
                               <CommandEmpty>
                                 {isLoading ? "Loading..." : "No room found"}
                               </CommandEmpty>
                               <CommandGroup>
-                                {rooms?.map((room) => (
+                                {availableRooms?.map((room) => (
                                   <CommandItem
                                     value={room.roomNo}
                                     key={room._id?.toString()}
@@ -414,6 +496,7 @@ export default function Reservation() {
                                       form.setValue("roomNo", room.roomNo);
                                       setOpen(false);
                                       setQuery("");
+                                      // setReserveQuery("");
                                     }}
                                   >
                                     <Check
@@ -491,9 +574,15 @@ export default function Reservation() {
                               selected={field.value}
                               onSelect={field.onChange}
                               // captionLayout="dropdown"
-                              disabled={{
-                                before: new Date(),
-                              }}
+                              disabled={[
+                                {
+                                  before: new Date(),
+                                },
+                                {
+                                  from: reserveArrival,
+                                  to: reserveDeparture,
+                                },
+                              ]}
                             />
                           </PopoverContent>
                         </Popover>
@@ -784,7 +873,8 @@ export default function Reservation() {
                 <ReservationInvoive
                   bookingInfo={{
                     guest: {
-                      reservationNo: form.getValues("reservationNo"),
+                      reservationNo: form.getValues("reservationNo") ?? "",
+                      ota: form.getValues("ota") ?? "",
                       name: form.getValues("name"),
                       email: form.getValues("email"),
                       phone: form.getValues("phone"),

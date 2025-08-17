@@ -4,7 +4,8 @@ import { IReservation } from "../types";
 const reservationSchema = new Schema<IReservation>(
   {
     guest: {
-      reservationNo: { type: String, required: true },
+      reservationNo: { type: String },
+      ota: { type: String },
       name: { type: String, required: true },
       email: { type: String },
       phone: { type: String },
