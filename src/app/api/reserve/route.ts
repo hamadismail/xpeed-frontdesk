@@ -64,9 +64,7 @@ export async function GET(request: Request) {
   // Filter by search term (if provided)
   const filteredReservation = search
     ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      reservation.filter((res: any) =>
-        res.room.roomNo?.toString().includes(search)
-      )
+      reservation.filter((res: any) => res.room.roomNo?.toString() === search)
     : reservation;
 
   return NextResponse.json(filteredReservation);

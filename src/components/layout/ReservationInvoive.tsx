@@ -87,8 +87,8 @@ export default function ReservationInvoice({
             <div>
               <h2 className="text-lg font-semibold mb-2">Guest Details</h2>
               <div className="grid grid-cols-[auto_1fr] gap-2 text-sm">
-                <div className="font-medium">Reservation No:</div>
-                <div>{bookingInfo.guest.reservationNo}</div>
+                <div className="font-medium">Reservation No. / OTA:</div>
+                <div>{bookingInfo.guest.reservationNo || bookingInfo.guest.ota}</div>
 
                 <div className="font-medium">Name:</div>
                 <div>{bookingInfo.guest.name}</div>

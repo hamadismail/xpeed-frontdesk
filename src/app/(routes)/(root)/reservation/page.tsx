@@ -122,6 +122,7 @@ export default function Reservation() {
       room.roomStatus === RoomStatus.AVAILABLE ||
       room.roomStatus === RoomStatus.RESERVED
   );
+
   const availableRooms = allAvailableRooms.slice(0, 6);
 
   const reserveArrival = reservedGuests[0]?.room?.arrival;
@@ -574,7 +575,9 @@ export default function Reservation() {
                               // captionLayout="dropdown"
                               disabled={[
                                 {
-                                  before: new Date(),
+                                  before: new Date(
+                                    new Date().setDate(new Date().getDate() + 1)
+                                  ),
                                 },
                                 {
                                   from: reserveArrival,
@@ -627,9 +630,21 @@ export default function Reservation() {
                               selected={field.value}
                               onSelect={field.onChange}
                               // captionLayout="dropdown"
-                              disabled={{
-                                before: form.watch("arrivalDate") || new Date(),
-                              }}
+                              disabled={[
+                                {
+                                  before:
+                                    form.watch("arrivalDate") ||
+                                    new Date(
+                                      new Date().setDate(
+                                        new Date().getDate() + 1
+                                      )
+                                    ),
+                                },
+                                {
+                                  from: reserveArrival,
+                                  to: reserveDeparture,
+                                },
+                              ]}
                             />
                           </PopoverContent>
                         </Popover>
