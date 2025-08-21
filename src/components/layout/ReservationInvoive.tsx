@@ -187,7 +187,7 @@ export default function ReservationInvoice({
               <div>Total Amount</div>
               <div></div>
               <div className="text-right">
-                RM {bookingInfo.payment.totalAmount.toFixed(2)}
+                RM {bookingInfo?.payment?.totalAmount?.toFixed(2) || 0}
               </div>
             </div>
           </div>

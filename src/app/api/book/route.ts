@@ -7,10 +7,10 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET() {
   try {
     await connectDB();
-    
+
     // Get all bookings and populate room information
     const bookings = await Book.find().sort({ createdAt: -1 }).lean();
-    
+
     return NextResponse.json(bookings);
   } catch (error) {
     console.error("Error fetching bookings:", error);

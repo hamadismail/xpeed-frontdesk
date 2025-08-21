@@ -5,13 +5,12 @@ import { useReactToPrint } from "react-to-print";
 import { useRef } from "react";
 import {
   Hotel,
-  BedSingle,
-  BedDouble,
-  Crown,
   Calendar as CalendarIcon,
   User,
   CreditCard,
 } from "lucide-react";
+import { getRoomIcon } from "@/src/utils/getRoomIcon";
+import { RoomType } from "@/src/models/room.model";
 
 interface InvoiceProps {
   bookingInfo: {
@@ -31,7 +30,7 @@ interface InvoiceProps {
     };
     room: {
       number: string;
-      type: string;
+      type: RoomType;
       floor: string;
       price: number;
     };
@@ -88,21 +87,6 @@ export function Invoice({
     handlePrint();
   };
 
-  const getRoomIcon = (type: string) => {
-    switch (type) {
-      case "Single":
-        return <BedSingle className="h-5 w-5" />;
-      case "Twin":
-        return <BedDouble className="h-5 w-5" />;
-      case "Queen":
-        return <Crown className="h-5 w-5" />;
-      case "Suite":
-        return <Hotel className="h-5 w-5" />;
-      default:
-        return <BedSingle className="h-5 w-5" />;
-    }
-  };
-
   return (
     <div className="flex flex-col items-center w-full">
       <div className="flex gap-4 mb-6">
@@ -129,8 +113,7 @@ export function Invoice({
               179, Jalan Pudu, Pudu-55100 Kuala Lumpur, Malaysia
             </p>
             <p className="text-muted-foreground">
-              Phone: +601116962002, +60178988418 | Email:
-              ecohotel.bb@gmail.com
+              Phone: +601116962002, +60178988418 | Email: ecohotel.bb@gmail.com
             </p>
           </div>
 

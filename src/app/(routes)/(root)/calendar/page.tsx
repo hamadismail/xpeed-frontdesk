@@ -2,20 +2,59 @@
 
 import React, { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isToday, isSameMonth, addMonths, subMonths, startOfWeek, endOfWeek, isSameDay, parseISO } from "date-fns";
-import { ChevronLeft, ChevronRight, Calendar, Plus, Hotel, Clock, User, CheckCircle } from "lucide-react";
+import axios, { AxiosError } from "axios";
+import {
+  format,
+  startOfMonth,
+  endOfMonth,
+  eachDayOfInterval,
+  isToday,
+  isSameMonth,
+  addMonths,
+  subMonths,
+  startOfWeek,
+  endOfWeek,
+  // isSameDay,
+  // parseISO,
+} from "date-fns";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Calendar,
+  // Plus,
+  Hotel,
+  Clock,
+  User,
+  CheckCircle,
+} from "lucide-react";
 import { Button } from "@/src/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/src/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/src/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  // DialogTrigger,
+} from "@/src/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { Textarea } from "@/src/components/ui/textarea";
 import { toast } from "sonner";
 import { IRoom, RoomStatus } from "@/src/models/room.model";
-import { IReservation } from "@/src/types";
+import { IQuickBooking, IReservation } from "@/src/types";
 import { OTAS, GUEST_STATUS } from "@/src/models/book.model";
 
 interface CalendarBooking {
@@ -42,8 +81,10 @@ export default function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false);
-  const [bookingType, setBookingType] = useState<"reservation" | "booking">("reservation");
-  
+  const [bookingType, setBookingType] = useState<"reservation" | "booking">(
+    "reservation"
+  );
+
   const queryClient = useQueryClient();
 
   // Fetch all rooms
@@ -69,23 +110,26 @@ export default function CalendarPage() {
   const monthEnd = endOfMonth(currentDate);
   const calendarStart = startOfWeek(monthStart);
   const calendarEnd = endOfWeek(monthEnd);
-  const calendarDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+  const calendarDays = eachDayOfInterval({
+    start: calendarStart,
+    end: calendarEnd,
+  });
 
   // Process bookings for calendar display
   const processedBookings = useMemo(() => {
     const bookingMap: { [key: string]: CalendarBooking[] } = {};
-    
+
     // Process reservations
     reservations.forEach((reservation) => {
       if (reservation.room?.arrival && reservation.room?.departure) {
         const arrival = new Date(reservation.room.arrival);
         const departure = new Date(reservation.room.departure);
-        
+
         const currentDay = new Date(arrival);
         while (currentDay <= departure) {
-          const dayKey = format(currentDay, 'yyyy-MM-dd');
+          const dayKey = format(currentDay, "yyyy-MM-dd");
           if (!bookingMap[dayKey]) bookingMap[dayKey] = [];
-          
+
           bookingMap[dayKey].push({
             _id: reservation._id || `res-${Math.random()}`,
             guest: {
@@ -100,26 +144,26 @@ export default function CalendarPage() {
             },
             roomNo: reservation.room.roomNo,
           });
-          
+
           currentDay.setDate(currentDay.getDate() + 1);
         }
       }
     });
-    
+
     // Process bookings
     bookings.forEach((booking) => {
       if (booking.stay?.arrival && booking.stay?.departure) {
         const arrival = new Date(booking.stay.arrival);
         const departure = new Date(booking.stay.departure);
-        
+
         const currentDay = new Date(arrival);
         while (currentDay <= departure) {
-          const dayKey = format(currentDay, 'yyyy-MM-dd');
+          const dayKey = format(currentDay, "yyyy-MM-dd");
           if (!bookingMap[dayKey]) bookingMap[dayKey] = [];
-          
+
           // Find room number from rooms array
-          const room = rooms.find(r => r._id?.toString() === booking.roomId);
-          
+          const room = rooms.find((r) => r._id?.toString() === booking.roomId);
+
           bookingMap[dayKey].push({
             _id: booking._id,
             guest: {
@@ -132,14 +176,14 @@ export default function CalendarPage() {
               departure,
             },
             roomId: booking.roomId,
-            roomNo: room?.roomNo || 'Unknown',
+            roomNo: room?.roomNo || "Unknown",
           });
-          
+
           currentDay.setDate(currentDay.getDate() + 1);
         }
       }
     });
-    
+
     return bookingMap;
   }, [reservations, bookings, rooms]);
 
@@ -157,16 +201,18 @@ export default function CalendarPage() {
 
   // Quick booking mutation
   const quickBookingMutation = useMutation({
-    mutationFn: async (bookingData: any) => {
+    mutationFn: async (bookingData: IQuickBooking) => {
       if (bookingType === "reservation") {
         const payload = {
           guest: {
             name: bookingData.guestName,
             phone: bookingData.guestPhone,
             ota: bookingData.ota,
+            status: GUEST_STATUS.RESERVED,
           },
           room: {
-            roomNo: rooms.find(r => r._id?.toString() === bookingData.roomId)?.roomNo,
+            roomNo: rooms.find((r) => r._id?.toString() === bookingData.roomId)
+              ?.roomNo,
             arrival: new Date(bookingData.arrival),
             departure: new Date(bookingData.departure),
             roomDetails: bookingData.notes,
@@ -187,7 +233,7 @@ export default function CalendarPage() {
             phone: bookingData.guestPhone,
             refId: `WG-${Date.now()}`,
             otas: bookingData.ota,
-            status: GUEST_STATUS.RESERVED,
+            status: GUEST_STATUS.CHECKED_IN,
           },
           stay: {
             arrival: new Date(bookingData.arrival),
@@ -209,7 +255,11 @@ export default function CalendarPage() {
       }
     },
     onSuccess: () => {
-      toast.success(`${bookingType === "reservation" ? "Reservation" : "Booking"} created successfully!`);
+      toast.success(
+        `${
+          bookingType === "reservation" ? "Reservation" : "Booking"
+        } created successfully!`
+      );
       queryClient.invalidateQueries({ queryKey: ["reservations"] });
       queryClient.invalidateQueries({ queryKey: ["bookings"] });
       queryClient.invalidateQueries({ queryKey: ["rooms"] });
@@ -225,7 +275,7 @@ export default function CalendarPage() {
         notes: "",
       });
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ message: string }>) => {
       toast.error("Failed to create booking", {
         description: error.response?.data?.message || "Something went wrong",
       });
@@ -234,15 +284,20 @@ export default function CalendarPage() {
 
   const handleDateClick = (date: Date) => {
     setSelectedDate(date);
-    setQuickBookingForm(prev => ({
+    setQuickBookingForm((prev) => ({
       ...prev,
-      arrival: format(date, 'yyyy-MM-dd'),
-      departure: format(new Date(date.getTime() + 24 * 60 * 60 * 1000), 'yyyy-MM-dd'),
+      arrival: format(date, "yyyy-MM-dd"),
+      departure: format(
+        new Date(date.getTime() + 24 * 60 * 60 * 1000),
+        "yyyy-MM-dd"
+      ),
     }));
     setIsBookingDialogOpen(true);
   };
 
-  const availableRooms = rooms.filter(room => room.roomStatus === RoomStatus.AVAILABLE);
+  const availableRooms = rooms.filter(
+    (room) => room.roomStatus !== RoomStatus.OCCUPIED
+  );
 
   return (
     <div className="p-6 space-y-6">
@@ -252,7 +307,7 @@ export default function CalendarPage() {
           <Calendar className="h-8 w-8 text-primary" />
           <h1 className="text-3xl font-bold">Reservation Calendar</h1>
         </div>
-        
+
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
@@ -261,11 +316,11 @@ export default function CalendarPage() {
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          
+
           <div className="px-4 py-2 text-lg font-semibold min-w-[200px] text-center">
-            {format(currentDate, 'MMMM yyyy')}
+            {format(currentDate, "MMMM yyyy")}
           </div>
-          
+
           <Button
             variant="outline"
             size="icon"
@@ -273,11 +328,8 @@ export default function CalendarPage() {
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
-          
-          <Button
-            onClick={() => setCurrentDate(new Date())}
-            variant="outline"
-          >
+
+          <Button onClick={() => setCurrentDate(new Date())} variant="outline">
             Today
           </Button>
         </div>
@@ -296,7 +348,7 @@ export default function CalendarPage() {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
@@ -308,7 +360,7 @@ export default function CalendarPage() {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
@@ -320,14 +372,19 @@ export default function CalendarPage() {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <User className="h-5 w-5 text-red-500" />
               <div>
                 <p className="text-sm text-muted-foreground">Occupied</p>
-                <p className="text-2xl font-bold">{rooms.filter(r => r.roomStatus === RoomStatus.OCCUPIED).length}</p>
+                <p className="text-2xl font-bold">
+                  {
+                    rooms.filter((r) => r.roomStatus === RoomStatus.OCCUPIED)
+                      .length
+                  }
+                </p>
               </div>
             </div>
           </CardContent>
@@ -342,34 +399,41 @@ export default function CalendarPage() {
         <CardContent>
           {/* Days of week header */}
           <div className="grid grid-cols-7 gap-1 mb-4">
-            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-              <div key={day} className="p-2 text-center font-semibold text-muted-foreground">
+            {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+              <div
+                key={day}
+                className="p-2 text-center font-semibold text-muted-foreground"
+              >
                 {day}
               </div>
             ))}
           </div>
-          
+
           {/* Calendar days */}
           <div className="grid grid-cols-7 gap-1">
             {calendarDays.map((day) => {
-              const dayKey = format(day, 'yyyy-MM-dd');
+              const dayKey = format(day, "yyyy-MM-dd");
               const dayBookings = processedBookings[dayKey] || [];
               const isCurrentMonth = isSameMonth(day, currentDate);
               const isTodayDate = isToday(day);
-              
+
               return (
                 <div
                   key={dayKey}
                   className={`
                     min-h-[120px] p-2 border border-border rounded-lg cursor-pointer hover:bg-accent/50 transition-colors
-                    ${!isCurrentMonth ? 'opacity-50' : ''}
-                    ${isTodayDate ? 'bg-primary/10 border-primary' : ''}
+                    ${!isCurrentMonth ? "opacity-50" : ""}
+                    ${isTodayDate ? "bg-primary/10 border-primary" : ""}
                   `}
                   onClick={() => handleDateClick(day)}
                 >
                   <div className="flex justify-between items-start mb-2">
-                    <span className={`text-sm font-medium ${isTodayDate ? 'text-primary' : ''}`}>
-                      {format(day, 'd')}
+                    <span
+                      className={`text-sm font-medium ${
+                        isTodayDate ? "text-primary" : ""
+                      }`}
+                    >
+                      {format(day, "d")}
                     </span>
                     {dayBookings.length > 0 && (
                       <Badge variant="secondary" className="text-xs px-1 py-0">
@@ -377,15 +441,15 @@ export default function CalendarPage() {
                       </Badge>
                     )}
                   </div>
-                  
+
                   <div className="space-y-1">
                     {dayBookings.slice(0, 3).map((booking, index) => (
                       <div
                         key={`${booking._id}-${index}`}
                         className={`text-xs p-1 rounded truncate ${
                           booking.guest.status === GUEST_STATUS.RESERVED
-                            ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400'
-                            : 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+                            ? "bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400"
+                            : "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400"
                         }`}
                         title={`${booking.guest.name} - Room ${booking.roomNo}`}
                       >
@@ -411,10 +475,10 @@ export default function CalendarPage() {
           <DialogHeader>
             <DialogTitle>
               Quick {bookingType === "reservation" ? "Reservation" : "Booking"}
-              {selectedDate && ` - ${format(selectedDate, 'MMM dd, yyyy')}`}
+              {selectedDate && ` - ${format(selectedDate, "MMM dd, yyyy")}`}
             </DialogTitle>
           </DialogHeader>
-          
+
           <div className="space-y-4">
             <div className="flex gap-2">
               <Button
@@ -434,48 +498,63 @@ export default function CalendarPage() {
                 Booking
               </Button>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="guestName">Guest Name *</Label>
                 <Input
                   id="guestName"
                   value={quickBookingForm.guestName}
-                  onChange={(e) => setQuickBookingForm(prev => ({ ...prev, guestName: e.target.value }))}
+                  onChange={(e) =>
+                    setQuickBookingForm((prev) => ({
+                      ...prev,
+                      guestName: e.target.value,
+                    }))
+                  }
                   placeholder="Enter guest name"
                 />
               </div>
-              
+
               <div>
                 <Label htmlFor="guestPhone">Phone *</Label>
                 <Input
                   id="guestPhone"
                   value={quickBookingForm.guestPhone}
-                  onChange={(e) => setQuickBookingForm(prev => ({ ...prev, guestPhone: e.target.value }))}
+                  onChange={(e) =>
+                    setQuickBookingForm((prev) => ({
+                      ...prev,
+                      guestPhone: e.target.value,
+                    }))
+                  }
                   placeholder="Enter phone number"
                 />
               </div>
             </div>
-            
+
             <div>
               <Label htmlFor="room">Room *</Label>
               <Select
                 value={quickBookingForm.roomId}
-                onValueChange={(value) => setQuickBookingForm(prev => ({ ...prev, roomId: value }))}
+                onValueChange={(value) =>
+                  setQuickBookingForm((prev) => ({ ...prev, roomId: value }))
+                }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select a room" />
                 </SelectTrigger>
                 <SelectContent>
                   {availableRooms.map((room) => (
-                    <SelectItem key={room._id?.toString()} value={room._id?.toString() || ""}>
+                    <SelectItem
+                      key={room._id?.toString()}
+                      value={room._id?.toString() || ""}
+                    >
                       {room.roomNo} - {room.roomType}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="arrival">Arrival Date *</Label>
@@ -483,21 +562,31 @@ export default function CalendarPage() {
                   id="arrival"
                   type="date"
                   value={quickBookingForm.arrival}
-                  onChange={(e) => setQuickBookingForm(prev => ({ ...prev, arrival: e.target.value }))}
+                  onChange={(e) =>
+                    setQuickBookingForm((prev) => ({
+                      ...prev,
+                      arrival: e.target.value,
+                    }))
+                  }
                 />
               </div>
-              
+
               <div>
                 <Label htmlFor="departure">Departure Date *</Label>
                 <Input
                   id="departure"
                   type="date"
                   value={quickBookingForm.departure}
-                  onChange={(e) => setQuickBookingForm(prev => ({ ...prev, departure: e.target.value }))}
+                  onChange={(e) =>
+                    setQuickBookingForm((prev) => ({
+                      ...prev,
+                      departure: e.target.value,
+                    }))
+                  }
                 />
               </div>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="adults">Adults</Label>
@@ -506,15 +595,22 @@ export default function CalendarPage() {
                   type="number"
                   min="1"
                   value={quickBookingForm.adults}
-                  onChange={(e) => setQuickBookingForm(prev => ({ ...prev, adults: parseInt(e.target.value) || 1 }))}
+                  onChange={(e) =>
+                    setQuickBookingForm((prev) => ({
+                      ...prev,
+                      adults: parseInt(e.target.value) || 1,
+                    }))
+                  }
                 />
               </div>
-              
+
               <div>
                 <Label htmlFor="ota">Source</Label>
                 <Select
                   value={quickBookingForm.ota}
-                  onValueChange={(value: OTAS) => setQuickBookingForm(prev => ({ ...prev, ota: value }))}
+                  onValueChange={(value: OTAS) =>
+                    setQuickBookingForm((prev) => ({ ...prev, ota: value }))
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -529,18 +625,23 @@ export default function CalendarPage() {
                 </Select>
               </div>
             </div>
-            
+
             <div>
               <Label htmlFor="notes">Notes</Label>
               <Textarea
                 id="notes"
                 value={quickBookingForm.notes}
-                onChange={(e) => setQuickBookingForm(prev => ({ ...prev, notes: e.target.value }))}
+                onChange={(e) =>
+                  setQuickBookingForm((prev) => ({
+                    ...prev,
+                    notes: e.target.value,
+                  }))
+                }
                 placeholder="Additional notes..."
                 rows={3}
               />
             </div>
-            
+
             <div className="flex gap-2 pt-4">
               <Button
                 variant="outline"
@@ -551,10 +652,19 @@ export default function CalendarPage() {
               </Button>
               <Button
                 onClick={() => quickBookingMutation.mutate(quickBookingForm)}
-                disabled={!quickBookingForm.guestName || !quickBookingForm.guestPhone || !quickBookingForm.roomId || quickBookingMutation.isPending}
+                disabled={
+                  !quickBookingForm.guestName ||
+                  !quickBookingForm.guestPhone ||
+                  !quickBookingForm.roomId ||
+                  quickBookingMutation.isPending
+                }
                 className="flex-1"
               >
-                {quickBookingMutation.isPending ? "Creating..." : `Create ${bookingType === "reservation" ? "Reservation" : "Booking"}`}
+                {quickBookingMutation.isPending
+                  ? "Creating..."
+                  : `Create ${
+                      bookingType === "reservation" ? "Reservation" : "Booking"
+                    }`}
               </Button>
             </div>
           </div>

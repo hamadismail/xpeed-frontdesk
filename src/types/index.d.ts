@@ -1,3 +1,5 @@
+import { OTAS } from "../models/book.model";
+
 export interface IReservation {
   _id?: string;
   guest: {
@@ -25,4 +27,15 @@ export interface IReservation {
     totalAmount?: number;
   };
   reservationDate: string;
+}
+
+export interface IQuickBooking {
+  guestName: string;
+  guestPhone: string;
+  roomId: string;
+  arrival: string;
+  departure: string;
+  adults: number;
+  ota: OTAS;
+  notes: string;
 }
