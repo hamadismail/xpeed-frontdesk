@@ -1,7 +1,8 @@
 export interface IReservation {
+  _id?: string;
   guest: {
-    reservationNo: string;
-    ota: string;
+    reservationNo?: string;
+    ota?: string;
     name: string;
     email?: string;
     phone: string;
@@ -21,7 +22,7 @@ export interface IReservation {
     sst: number;
     tourismTax: number;
     fnfDiscount: number;
-    totalAmount: number;
+    totalAmount?: number;
   };
   reservationDate: string;
 }
