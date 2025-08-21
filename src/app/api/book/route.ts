@@ -4,6 +4,23 @@ import { Book } from "@/src/models/book.model";
 import { Room, RoomStatus } from "@/src/models/room.model";
 import { NextRequest, NextResponse } from "next/server";
 
+export async function GET() {
+  try {
+    await connectDB();
+    
+    // Get all bookings and populate room information
+    const bookings = await Book.find().sort({ createdAt: -1 }).lean();
+    
+    return NextResponse.json(bookings);
+  } catch (error) {
+    console.error("Error fetching bookings:", error);
+    return NextResponse.json(
+      { message: "Server error while fetching bookings" },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     await connectDB();
@@ -24,7 +41,7 @@ export async function POST(req: NextRequest) {
     if (!room) {
       return NextResponse.json({ message: "Room not found" }, { status: 404 });
     }
-    if (room.isBooked) {
+    if (room.roomStatus === RoomStatus.OCCUPIED) {
       return NextResponse.json(
         { message: "Room already booked" },
         { status: 409 }
@@ -40,7 +57,6 @@ export async function POST(req: NextRequest) {
 
     // Mark room as booked
     room.roomStatus = RoomStatus.OCCUPIED;
-    room.isBooked = true;
     room.guestId = newBooking?._id;
     await room.save();
 
