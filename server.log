@@ -1,0 +1,51 @@
+
+> xpeed-frontdesk@0.1.0 dev
+> next dev --turbopack
+
+   ▲ Next.js 15.4.5 (Turbopack)
+   - Local:        http://localhost:3000
+   - Network:      http://10.64.160.140:3000
+   - Environments: .env
+
+ ✓ Starting...
+ ✓ Ready in 1831ms
+ ○ Compiling / ...
+ ✓ Compiled / in 68.3s
+ GET /?x_request_source=preview 200 in 71511ms
+ GET / 200 in 4849ms
+ GET /?x_request_source=preview 200 in 459ms
+ ○ Compiling /api/rooms ...
+ ✓ Compiled /api/rooms in 1046ms
+ ⚠ Cross origin request detected from hotel-bookwise.preview.emergentagent.com to /_next/* resource. In a future major version of Next.js, you will need to explicitly configure "allowedDevOrigins" in next.config to allow this.
+Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins
+ GET / 200 in 150ms
+ GET /api/rooms 200 in 285ms
+ ✓ Compiled /api/stayover/[guestId] in 414ms
+ GET /api/stayover/68a1f20155b523c981663979 200 in 1601ms
+ GET /api/stayover/68a39c19a3eea017230f6e8f 200 in 1615ms
+ GET /api/stayover/68a49213ea2affb71443f7f3 200 in 1605ms
+ POST /?x_request_source=preview 200 in 296ms
+ ○ Compiling /calendar ...
+ ✓ Compiled /calendar in 972ms
+ GET /calendar 200 in 1029ms
+ GET / 200 in 165ms
+ GET /api/rooms 200 in 283ms
+ GET /api/stayover/68a39c19a3eea017230f6e8f 200 in 354ms
+ GET /api/stayover/68a1f20155b523c981663979 200 in 354ms
+ GET /api/stayover/68a49213ea2affb71443f7f3 200 in 406ms
+ GET /calendar 200 in 110ms
+ ○ Compiling /api/reserve ...
+ GET /api/rooms 200 in 569ms
+ ✓ Compiled /api/reserve in 803ms
+ GET /api/reserve 200 in 1010ms
+ GET /api/book 200 in 1117ms
+ GET / 200 in 180ms
+ GET /api/rooms 200 in 294ms
+ GET /api/stayover/68a39c19a3eea017230f6e8f 200 in 354ms
+ GET /api/stayover/68a1f20155b523c981663979 200 in 371ms
+ GET /api/stayover/68a49213ea2affb71443f7f3 200 in 373ms
+ GET / 200 in 164ms
+ GET /api/rooms 200 in 291ms
+ GET /api/stayover/68a39c19a3eea017230f6e8f 200 in 414ms
+ GET /api/stayover/68a1f20155b523c981663979 200 in 416ms
+ GET /api/stayover/68a49213ea2affb71443f7f3 200 in 431ms
