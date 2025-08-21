@@ -49,3 +49,12 @@ Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allow
  GET /api/stayover/68a39c19a3eea017230f6e8f 200 in 414ms
  GET /api/stayover/68a1f20155b523c981663979 200 in 416ms
  GET /api/stayover/68a49213ea2affb71443f7f3 200 in 431ms
+ GET /calendar 200 in 900ms
+ GET /api/rooms 200 in 360ms
+ GET /api/book 200 in 398ms
+ GET /api/reserve 200 in 403ms
+ GET / 200 in 178ms
+ GET /api/rooms 200 in 264ms
+ GET /api/stayover/68a39c19a3eea017230f6e8f 200 in 370ms
+ GET /api/stayover/68a1f20155b523c981663979 200 in 376ms
+ GET /api/stayover/68a49213ea2affb71443f7f3 200 in 395ms
