@@ -449,7 +449,7 @@ export default function CalendarPage() {
                         className={`text-xs p-1 rounded truncate ${
                           booking.guest.status === GUEST_STATUS.RESERVED
                             ? "bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400"
-                            : "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400"
+                            : "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
                         }`}
                         title={`${booking.guest.name} - Room ${booking.roomNo}`}
                       >
