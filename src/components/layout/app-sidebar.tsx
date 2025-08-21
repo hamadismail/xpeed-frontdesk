@@ -11,12 +11,17 @@ import {
   Settings,
   ChevronRight,
   Clock,
-
+  Calendar,
 } from "lucide-react";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarHeader } from "../ui/sidebar";
 
 const navLinks = [
   { label: "All Rooms", href: "/", icon: <Hotel className="h-5 w-5" /> },
+  {
+    label: "Calendar",
+    href: "/calendar",
+    icon: <Calendar className="h-5 w-5" />,
+  },
   {
     label: "Dashboard",
     href: "/dashboard",
