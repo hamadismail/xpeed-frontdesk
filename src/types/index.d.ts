@@ -39,3 +39,4 @@ export interface IQuickBooking {
   ota: OTAS;
   notes: string;
 }
+
