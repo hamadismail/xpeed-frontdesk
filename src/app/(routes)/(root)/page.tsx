@@ -26,12 +26,12 @@ export default function AllRooms() {
     queryFn: () => axios.get("/api/rooms").then((res) => res.data),
   });
 
-  const { data: allBookings = [] } = useQuery<IBook[]>({
+  const { data: allBookings = [], isLoading: bookLoading } = useQuery<IBook[]>({
     queryKey: ["book"],
     queryFn: () => axios.get("/api/book").then((res) => res.data),
   });
 
-  const { data: allReservations = [] } = useQuery<IReservation[]>({
+  const { data: allReservations = [], isLoading: reserveLoading } = useQuery<IReservation[]>({
     queryKey: ["reserve"],
     queryFn: () => axios.get("/api/reserve").then((res) => res.data),
   });
@@ -140,9 +140,10 @@ export default function AllRooms() {
   const availableCount =
     allRooms.length - occupiedCount - reservedCount - dueOutCount;
 
-  if (isLoading) {
-    <LoadingSpiner />;
+  if (isLoading || reserveLoading || bookLoading) {
+    return <LoadingSpiner />;
   }
+
 
   return (
     <div className="space-y-6 p-6">

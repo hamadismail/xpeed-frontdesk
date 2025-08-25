@@ -87,19 +87,6 @@ export default function RoomCard({
             </Button>
             <BookRoomDialog room={room} />
           </>
-        ) : roomStatus === RoomStatus.DUE_OUT ? (
-          <>
-            <Button
-              size="sm"
-              variant="secondary"
-              className="h-8 px-3 gap-1 "
-              disabled
-            >
-              <Clock className="h-4 w-4" />
-              <span>Due Out</span>
-            </Button>
-            <CheckOut room={room} />
-          </>
         ) : (
           <>
             <StayOver room={room} />
