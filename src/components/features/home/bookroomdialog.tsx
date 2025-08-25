@@ -99,10 +99,21 @@ export default function BookRoomDialog({ room }: { room: IRoom }) {
       resetForm();
       setOpen(false);
     },
-    onError: (error) => {
-      toast.error("Booking failed", {
-        description: error?.message || "Something went wrong",
-      });
+    onError: (error: unknown) => {
+      // Check if it's a conflict error (409) from our validation
+      if (axios.isAxiosError(error) && error.response?.status === 409) {
+        toast.error("Booking failed", {
+          description: error.response.data?.message || "Room not available for selected dates",
+        });
+      } else if (axios.isAxiosError(error)) {
+        toast.error("Booking failed", {
+          description: error.message || "Something went wrong",
+        });
+      } else {
+        toast.error("Booking failed", {
+          description: "Something went wrong",
+        });
+      }
     },
   });
 
@@ -188,7 +199,12 @@ export default function BookRoomDialog({ room }: { room: IRoom }) {
       nights = 1;
     }
 
-    return roomPrice * nights + sst + tourismTax - discount;
+    // Calculate SST as percentage of room price
+    const sstAmount = (roomPrice * nights * sst) / 100;
+    // Calculate tourism tax per night
+    const tourismTaxAmount = tourismTax * nights;
+
+    return roomPrice * nights + sstAmount + tourismTaxAmount - discount;
   };
 
   const calculateDue = () => {
@@ -593,55 +609,67 @@ export default function BookRoomDialog({ room }: { room: IRoom }) {
             <div className="bg-muted/50 p-3 rounded-lg">
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">
-                  Room Price:
+                  Room Price ({calculateNights()} nights):
                 </span>
                 <span className="font-medium">
                   RM{" "}
                   {(parseFloat(paymentInfo.roomPrice) || 0) * calculateNights()}
                 </span>
               </div>
-              {paymentInfo.sst && (
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">SST:</span>
-                  <span className="font-medium">RM {paymentInfo.sst}</span>
-                </div>
-              )}
-              {paymentInfo.tourismTax && (
+              {paymentInfo.sst && parseFloat(paymentInfo.sst) > 0 && (
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">
-                    Tourism Tax:
+                    SST ({paymentInfo.sst}%):
                   </span>
                   <span className="font-medium">
                     RM{" "}
-                    {(parseFloat(paymentInfo.tourismTax) || 0) *
-                      calculateNights()}
+                    {(
+                      ((parseFloat(paymentInfo.roomPrice) || 0) *
+                        calculateNights() *
+                        parseFloat(paymentInfo.sst)) /
+                      100
+                    ).toFixed(2)}
                   </span>
                 </div>
               )}
-              {paymentInfo.discount && (
+              {paymentInfo.tourismTax && parseFloat(paymentInfo.tourismTax) > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">
+                    Tourism Tax ({calculateNights()} nights):
+                  </span>
+                  <span className="font-medium">
+                    RM{" "}
+                    {(
+                      (parseFloat(paymentInfo.tourismTax) || 0) *
+                      calculateNights()
+                    ).toFixed(2)}
+                  </span>
+                </div>
+              )}
+              {paymentInfo.discount && parseFloat(paymentInfo.discount) > 0 && (
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">
                     Discount:
                   </span>
                   <span className="font-medium text-red-500">
-                    - RM {paymentInfo.discount}
+                    - RM {parseFloat(paymentInfo.discount).toFixed(2)}
                   </span>
                 </div>
               )}
               <div className="flex justify-between mt-2 pt-2 border-t">
-                <span className="text-sm font-medium">Subtotal:</span>
-                <span className="font-bold">RM {calculateTotal()}</span>
+                <span className="text-sm font-medium">Total Amount:</span>
+                <span className="font-bold">RM {calculateTotal().toFixed(2)}</span>
               </div>
               <div className="flex justify-between mt-2 pt-2 border-t">
                 <span className="text-sm font-medium">Total Paid:</span>
                 <span className="font-bold">
-                  RM {paymentInfo.paidAmount || 0}
+                  RM {parseFloat(paymentInfo.paidAmount || "0").toFixed(2)}
                 </span>
               </div>
               <div className="flex justify-between mt-2 pt-2 border-t text-red-500">
                 <span className="text-sm font-medium">Due Amount:</span>
                 <span className="font-bold">
-                  RM {calculateDue() || calculateTotal()}
+                  RM {calculateDue().toFixed(2)}
                 </span>
               </div>
             </div>

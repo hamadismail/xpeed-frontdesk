@@ -134,32 +134,35 @@ export default function RoomFilter({
           <ListChecks className="h-4 w-4" />
           Room Status
         </Label>
+
         <Select
-          onValueChange={(value: RoomStatus | "all" | RoomStatus.RESERVED) =>
-            setStatusFilter(value)
-          }
+          onValueChange={(value: RoomStatus | "all") => setStatusFilter(value)}
           defaultValue="all"
         >
           <SelectTrigger className="w-full">
             <SelectValue placeholder="All Status" />
           </SelectTrigger>
+
           <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem
-              value={RoomStatus.AVAILABLE}
-              className="flex items-center gap-2"
-            >
-              <CheckCircle className="h-4 w-4" /> Available
-            </SelectItem>
-            <SelectItem value="RESERVED" className="flex items-center gap-2">
-              <Clock className="h-4 w-4" /> Reserved
-            </SelectItem>
-            <SelectItem
-              value={RoomStatus.OCCUPIED}
-              className="flex items-center gap-2"
-            >
-              <User2 className="h-4 w-4" /> Occupied
-            </SelectItem>
+            {[
+              { value: "all", label: "All Status" },
+              {
+                value: RoomStatus.AVAILABLE,
+                label: "Available",
+                icon: CheckCircle,
+              },
+              { value: RoomStatus.RESERVED, label: "Reserved", icon: Clock },
+              { value: RoomStatus.OCCUPIED, label: "Occupied", icon: User2 },
+              { value: RoomStatus.DUE_OUT, label: "Due Out", icon: User2 },
+            ].map(({ value, label, icon: Icon }) => (
+              <SelectItem
+                key={value}
+                value={value}
+                className="flex items-center gap-2"
+              >
+                {Icon && <Icon className="h-4 w-4" />} {label}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>

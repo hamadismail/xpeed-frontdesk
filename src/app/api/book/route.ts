@@ -41,9 +41,55 @@ export async function POST(req: NextRequest) {
     if (!room) {
       return NextResponse.json({ message: "Room not found" }, { status: 404 });
     }
-    if (room.roomStatus === RoomStatus.OCCUPIED) {
+
+    // Check if room is already booked or reserved for the requested dates
+    const { arrival, departure } = stay;
+    const arrivalDate = new Date(arrival);
+    const departureDate = new Date(departure);
+
+    // Check for existing bookings that overlap with requested dates
+    const existingBookings = await Book.find({
+      roomId: roomId,
+      $or: [
+        {
+          "stay.arrival": { $lte: departureDate },
+          "stay.departure": { $gte: arrivalDate }
+        }
+      ]
+    });
+
+    if (existingBookings.length > 0) {
       return NextResponse.json(
-        { message: "Room already booked" },
+        { message: "Room already booked for the selected dates" },
+        { status: 409 }
+      );
+    }
+
+    // Check for existing reservations that overlap with requested dates
+    const { Reservation } = await import("@/src/models/reservation.model");
+    const existingReservations = await Reservation.find({
+      "room.roomNo": room.roomNo,
+      $or: [
+        {
+          $and: [
+            { "room.arrival": { $lt: departureDate } },
+            { "room.departure": { $gt: arrivalDate } }
+          ]
+        }
+      ]
+    });
+
+    if (existingReservations.length > 0) {
+      return NextResponse.json(
+        { message: "Room already reserved for the selected dates" },
+        { status: 409 }
+      );
+    }
+
+    // Additional validation for room status
+    if (room.roomStatus === RoomStatus.OCCUPIED || room.roomStatus === RoomStatus.RESERVED) {
+      return NextResponse.json(
+        { message: "Room not available for booking" },
         { status: 409 }
       );
     }

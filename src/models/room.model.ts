@@ -13,6 +13,7 @@ export enum RoomStatus {
   AVAILABLE = "AVAILABLE",
   RESERVED = "RESERVED",
   OCCUPIED = "OCCUPIED",
+  DUE_OUT = "DUE_OUT",
 }
 
 export interface IRoom {

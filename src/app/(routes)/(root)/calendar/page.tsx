@@ -62,7 +62,7 @@ interface CalendarBooking {
   guest: {
     name: string;
     phone: string;
-    status?: GUEST_STATUS;
+    status?: GUEST_STATUS | "Due Out";
   };
   stay?: {
     arrival: Date;
@@ -164,12 +164,16 @@ export default function CalendarPage() {
           // Find room number from rooms array
           const room = rooms.find((r) => r._id?.toString() === booking.roomId);
 
+          // Check if this is a due out booking (departure date)
+          const isDueOut = currentDay.toDateString() === departure.toDateString();
+          const guestStatus = isDueOut ? "Due Out" : booking.guest.status;
+
           bookingMap[dayKey].push({
             _id: booking._id,
             guest: {
               name: booking.guest.name,
               phone: booking.guest.phone,
-              status: booking.guest.status,
+              status: guestStatus,
             },
             stay: {
               arrival,
@@ -449,7 +453,9 @@ export default function CalendarPage() {
                         className={`text-xs p-1 rounded truncate ${
                           booking.guest.status === GUEST_STATUS.RESERVED
                             ? "bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400"
-                            : "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
+                            : booking.guest.status === GUEST_STATUS.CHECKED_IN
+                            ? "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
+                            : "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400"
                         }`}
                         title={`${booking.guest.name} - Room ${booking.roomNo}`}
                       >

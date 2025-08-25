@@ -7,7 +7,7 @@ import axios from "axios";
 import { IRoom, RoomStatus, RoomType } from "@/src/models/room.model";
 import { Button } from "@/src/components/ui/button";
 import LoadingSpiner from "@/src/utils/LoadingSpiner";
-import { IBook } from "@/src/models/book.model";
+import { GUEST_STATUS, IBook } from "@/src/models/book.model";
 import { IReservation } from "@/src/types";
 import RoomCard from "@/src/components/features/home/RoomCard";
 import RoomFilter from "@/src/components/features/home/RoomFilter";
@@ -41,19 +41,17 @@ export default function AllRooms() {
     const selectedDate = new Date(dateFilter);
 
     // Check if room is booked on selected date
-    const isBooked = allBookings.some(
-      (booking) =>
-        booking.roomId === room._id?.toString() &&
-        new Date(booking.stay.arrival) <= selectedDate &&
-        new Date(booking.stay.departure) >= selectedDate
-    );
+    // const isBooked = allBookings.some(
+    //   (booking) => booking.roomId === room._id?.toString()
+    // );
 
     // Check if room is reserved on selected date
     const isReserved = allReservations.some(
       (reservation) =>
         reservation.room.roomNo === room.roomNo &&
         new Date(reservation.room.arrival) <= selectedDate &&
-        new Date(reservation.room.departure) >= selectedDate
+        new Date(reservation.room.departure) >= selectedDate &&
+        room.roomStatus !== RoomStatus?.OCCUPIED
     );
 
     // Apply additional filters
@@ -61,22 +59,26 @@ export default function AllRooms() {
       (floorFilter === "all" || room.roomFloor.toString() === floorFilter) &&
       (typeFilter === "all" || room.roomType === typeFilter) &&
       (statusFilter === "all" ||
-        (statusFilter === RoomStatus.AVAILABLE && !isBooked && !isReserved) ||
-        (statusFilter === RoomStatus.OCCUPIED && isBooked) ||
-        (statusFilter === "RESERVED" && isReserved))
+        (statusFilter === RoomStatus.AVAILABLE &&
+          room.roomStatus === RoomStatus.AVAILABLE &&
+          !isReserved) ||
+        (statusFilter === RoomStatus.OCCUPIED &&
+          room.roomStatus === RoomStatus.OCCUPIED) ||
+        (statusFilter === RoomStatus.RESERVED && isReserved) ||
+        (statusFilter === RoomStatus.DUE_OUT &&
+          room.roomStatus === RoomStatus.DUE_OUT))
     );
   });
 
   // Room Info
-  const roomInfo = (room : IRoom) => {
+  const roomInfo = (room: IRoom) => {
     const selectedDate = new Date(dateFilter);
 
     // Find booking for this room on selected date
     const booking = allBookings.find(
       (b) =>
         b.roomId === room._id?.toString() &&
-        new Date(b.stay.arrival) <= selectedDate &&
-        new Date(b.stay.departure) >= selectedDate
+        room?.roomStatus === RoomStatus.OCCUPIED
     );
 
     // Find reservation for this room on selected date
@@ -88,11 +90,22 @@ export default function AllRooms() {
     );
 
     // Determine room status for selected date
-    let roomStatus = RoomStatus.AVAILABLE;
+    let roomStatus = room.roomStatus; // Default to room's actual status
     let guestName = "";
     let guestStatus = "";
 
-    if (booking) {
+    // If room is due out, show that status regardless of date
+    if (room.roomStatus === RoomStatus.DUE_OUT) {
+      roomStatus = RoomStatus.DUE_OUT;
+      // Find the guest info for the due out room
+      const dueOutBooking = allBookings.find(
+        (b) => b.roomId === room._id?.toString()
+      );
+      if (dueOutBooking) {
+        guestName = dueOutBooking.guest.name;
+        guestStatus = "Due Out";
+      }
+    } else if (booking) {
       roomStatus = RoomStatus.OCCUPIED;
       guestName = booking.guest.name;
       guestStatus = booking.guest.status;
@@ -107,10 +120,10 @@ export default function AllRooms() {
 
   // Count rooms by status for the selected date
   const selectedDate = new Date(dateFilter);
-  const occupiedCount = allBookings.filter(
-    (booking) =>
-      new Date(booking.stay.arrival) <= selectedDate &&
-      new Date(booking.stay.departure) >= selectedDate
+
+  // const occupiedCount = allBookings.length;
+  const occupiedCount = allRooms.filter(
+    (room) => room.roomStatus === RoomStatus.OCCUPIED
   ).length;
 
   const reservedCount = allReservations.filter(
@@ -119,7 +132,13 @@ export default function AllRooms() {
       new Date(reservation.room.departure) >= selectedDate
   ).length;
 
-  const availableCount = allRooms.length - occupiedCount - reservedCount;
+  // Count due out rooms (rooms with DUE_OUT status)
+  const dueOutCount = allRooms.filter(
+    (room) => room.roomStatus === RoomStatus.DUE_OUT
+  ).length;
+
+  const availableCount =
+    allRooms.length - occupiedCount - reservedCount - dueOutCount;
 
   if (isLoading) {
     <LoadingSpiner />;
@@ -139,6 +158,7 @@ export default function AllRooms() {
           availableCount={availableCount}
           reservedCount={reservedCount}
           occupiedCount={occupiedCount}
+          dueOutCount={dueOutCount}
         />
       </div>
 

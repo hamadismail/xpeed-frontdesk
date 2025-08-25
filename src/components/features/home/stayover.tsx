@@ -37,9 +37,9 @@ export default function StayOver({ room }: { room: IRoom }) {
   });
 
   const { data: singleGuest } = useQuery<IBook>({
-    queryKey: ["books", room?.guestId],
+    queryKey: ["books", room?.guestId?._id],
     queryFn: () =>
-      axios.get(`/api/stayover/${room?.guestId}`).then((res) => res.data),
+      axios.get(`/api/stayover/${room?.guestId?._id}`).then((res) => res.data),
   });
 
   const [stayInfo, setStayInfo] = useState({
@@ -86,7 +86,7 @@ export default function StayOver({ room }: { room: IRoom }) {
         },
       };
 
-      const res = await axios.patch(`/api/stayover/${room?.guestId}`, payload);
+      const res = await axios.patch(`/api/stayover/${room?.guestId?._id}`, payload);
       return res.data;
     },
     onSuccess: () => {

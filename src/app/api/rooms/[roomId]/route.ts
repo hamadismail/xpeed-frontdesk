@@ -13,10 +13,18 @@ export async function PATCH(
     const body = await req.json();
     const { status } = body;
 
-    // 1. Update Room Status to "Available"
+    // 1. Update Room Status
+    // If guest is checking out, set room to AVAILABLE
+    // If we're setting room to DUE_OUT, keep that status
+    const newRoomStatus = status === "CheckedOut"
+      ? RoomStatus.AVAILABLE
+      : status === "DueOut"
+      ? RoomStatus.DUE_OUT
+      : RoomStatus.AVAILABLE; // Default to AVAILABLE
+
     const updatedRoom = await Room.findByIdAndUpdate(
       roomId,
-      { roomStatus: RoomStatus.AVAILABLE },
+      { roomStatus: newRoomStatus },
       { new: true }
     );
 
@@ -55,3 +63,5 @@ export async function PATCH(
     );
   }
 }
+
+

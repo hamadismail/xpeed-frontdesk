@@ -15,6 +15,8 @@ export default function RoomBadge({ roomStatus }: RoomBadgeProps) {
           ? "default"
           : roomStatus === RoomStatus.RESERVED
           ? "secondary"
+          : roomStatus === RoomStatus.DUE_OUT
+          ? "outline"
           : "destructive"
       }
       className={`flex items-center gap-1 ${
@@ -22,6 +24,8 @@ export default function RoomBadge({ roomStatus }: RoomBadgeProps) {
           ? "bg-green-100 text-green-800 border-green-300"
           : roomStatus === RoomStatus.RESERVED
           ? "bg-yellow-100 text-yellow-800 border-yellow-300"
+          : roomStatus === RoomStatus.DUE_OUT
+          ? "bg-blue-100 text-blue-800 border-blue-300"
           : ""
       }`}
     >
@@ -30,6 +34,8 @@ export default function RoomBadge({ roomStatus }: RoomBadgeProps) {
         ? "OCCUPIED"
         : roomStatus === RoomStatus.RESERVED
         ? "RESERVED"
+        : roomStatus === RoomStatus.DUE_OUT
+        ? "DUE OUT"
         : "AVAILABLE"}
     </Badge>
   );

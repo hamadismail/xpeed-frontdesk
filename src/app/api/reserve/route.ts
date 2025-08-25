@@ -2,6 +2,7 @@
 import { connectDB } from "@/src/lib/mongoose";
 import { Reservation } from "@/src/models/reservation.model";
 import { Room, RoomStatus } from "@/src/models/room.model";
+import { Book } from "@/src/models/book.model";
 import { startSession } from "mongoose";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -14,19 +15,66 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const { payload } = body;
-    const { roomNo } = payload.room;
+    const { roomNo, arrival, departure } = payload.room;
+
+    // Check if room is already reserved or booked for the requested dates
+    const arrivalDate = new Date(arrival);
+    const departureDate = new Date(departure);
+
+    // Check for existing reservations that overlap with requested dates
+    const existingReservations = await Reservation.find({
+      "room.roomNo": roomNo,
+      $or: [
+        {
+          "room.arrival": { $lte: departureDate },
+          "room.departure": { $gte: arrivalDate }
+        }
+      ]
+    });
+
+    if (existingReservations.length > 0) {
+      await session.abortTransaction();
+      session.endSession();
+      return NextResponse.json(
+        { message: "Room already reserved for the selected dates" },
+        { status: 409 }
+      );
+    }
+
+    // Check for existing bookings that overlap with requested dates
+    const roomData = await Room.findOne({ roomNo });
+    if (roomData) {
+      const existingBookings = await Book.find({
+        roomId: roomData._id,
+        $or: [
+          {
+            "stay.arrival": { $lte: departureDate },
+            "stay.departure": { $gte: arrivalDate }
+          }
+        ]
+      });
+
+      if (existingBookings.length > 0) {
+        await session.abortTransaction();
+        session.endSession();
+        return NextResponse.json(
+          { message: "Room already booked for the selected dates" },
+          { status: 409 }
+        );
+      }
+    }
 
     // Create reservation inside transaction
     const newReservation = await Reservation.create([payload], { session });
 
     // Find and update room inside transaction
-    const roomData = await Room.findOne({ roomNo }).session(session);
-    if (!roomData) {
+    const room = await Room.findOne({ roomNo }).session(session);
+    if (!room) {
       throw new Error("Room not found");
     }
 
-    roomData.roomStatus = RoomStatus.RESERVED;
-    await roomData.save({ session });
+    room.roomStatus = RoomStatus.RESERVED;
+    await room.save({ session });
 
     // Commit transaction
     await session.commitTransaction();
@@ -69,3 +117,4 @@ export async function GET(request: Request) {
 
   return NextResponse.json(filteredReservation);
 }
+

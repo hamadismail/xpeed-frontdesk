@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import axios, { AxiosError } from "axios";
 import { Label } from "@/src/components/ui/label";
 import { IBook } from "@/src/models/book.model";
+import { PaymentReceipt } from "@/src/components/layout/payment-receipt";
 
 interface GuestPayment {
   _id: string;
@@ -31,6 +32,7 @@ interface GuestPayment {
 export default function PaymentModal({ guest }: { guest: GuestPayment }) {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [showReceipt, setShowReceipt] = useState(false);
   const [formErrors, setFormErrors] = useState({ paidAmount: "" });
 
   const { data: singleGuest } = useQuery<IBook>({
@@ -77,7 +79,7 @@ export default function PaymentModal({ guest }: { guest: GuestPayment }) {
       toast.success("Payment successful!");
       queryClient.invalidateQueries({ queryKey: ["payments", "rooms"] });
       resetForm();
-      setOpen(false);
+      setShowReceipt(true);
     },
     onError: (error: AxiosError) => {
       toast.error("Payment failed", {
@@ -102,7 +104,13 @@ export default function PaymentModal({ guest }: { guest: GuestPayment }) {
   const paymentAmount = Number(paymentInfo.paidAmount) || 0;
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      setOpen(isOpen);
+      if (!isOpen) {
+        setShowReceipt(false);
+        resetForm();
+      }
+    }}>
       <DialogTrigger asChild>
         <Button
           size="sm"
@@ -116,81 +124,131 @@ export default function PaymentModal({ guest }: { guest: GuestPayment }) {
       </DialogTrigger>
 
       <DialogContent className="sm:max-w-[600px]">
-        <DialogHeader>
-          <div className="flex items-center gap-3">
-            <DollarSign className="h-6 w-6 text-primary" />
-            <div>
-              <DialogTitle className="text-xl font-bold">
-                Payment Details
-              </DialogTitle>
-              <DialogDescription>Record payment for guest</DialogDescription>
+        {showReceipt ? (
+          <PaymentReceipt
+            paymentInfo={{
+              guest: {
+                name: singleGuest?.guest.name || "",
+                email: singleGuest?.guest.email || "",
+                phone: singleGuest?.guest.phone || "",
+                country: singleGuest?.guest.country || "",
+                passport: singleGuest?.guest.passport || "",
+              },
+              stay: {
+                arrival: singleGuest?.stay.arrival ? new Date(singleGuest.stay.arrival) : new Date(),
+                departure: singleGuest?.stay.departure ? new Date(singleGuest.stay.departure) : new Date(),
+                adults: singleGuest?.stay.adults || 0,
+                children: singleGuest?.stay.children || 0,
+                nights: Math.ceil(
+                  (new Date(singleGuest?.stay.departure || new Date()).getTime() -
+                    new Date(singleGuest?.stay.arrival || new Date()).getTime()) /
+                    (1000 * 60 * 60 * 24)
+                ) || 1,
+              },
+              room: {
+                number: (singleGuest?.roomId as unknown as string) || "",
+                type: "",
+                floor: "",
+                price: singleGuest?.payment?.roomPrice || 0,
+              },
+              payment: {
+                subtotal: singleGuest?.payment?.subtotal || 0,
+                sst: singleGuest?.payment?.sst || 0,
+                tourismTax: singleGuest?.payment?.tourismTax || 0,
+                discount: singleGuest?.payment?.discount || 0,
+                total: singleGuest?.payment?.subtotal || 0,
+                paidAmount: (singleGuest?.payment.paidAmount || 0) + paymentAmount,
+                dueAmount: currentDue,
+                method: singleGuest?.payment?.paymentMethod || "Cash",
+                paymentDate: new Date(),
+              },
+              bookingId: guest._id || "",
+              paymentId: `PAY-${Date.now()}`,
+            }}
+            onPrint={() => {
+              setShowReceipt(false);
+              setOpen(false);
+            }}
+          />
+        ) : (
+          <>
+            <DialogHeader>
+              <div className="flex items-center gap-3">
+                <DollarSign className="h-6 w-6 text-primary" />
+                <div>
+                  <DialogTitle className="text-xl font-bold">
+                    Payment Details
+                  </DialogTitle>
+                  <DialogDescription>Record payment for guest</DialogDescription>
+                </div>
+              </div>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="paidAmount">Amount Paid *</Label>
+                <Input
+                  id="paidAmount"
+                  type="number"
+                  value={paymentInfo.paidAmount}
+                  onChange={(e) => {
+                    setPaymentInfo({ paidAmount: e.target.value });
+                    if (formErrors.paidAmount) {
+                      setFormErrors({ paidAmount: "" });
+                    }
+                  }}
+                  placeholder="0.00"
+                  className={formErrors.paidAmount ? "border-destructive" : ""}
+                  min="0"
+                  step="0.01"
+                />
+                {formErrors.paidAmount && (
+                  <p className="text-sm text-destructive">
+                    {formErrors.paidAmount}
+                  </p>
+                )}
+              </div>
+
+              <div className="bg-muted/50 p-4 rounded-lg space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium">Total Due:</span>
+                  <span className="font-bold text-destructive">
+                    RM {totalDue.toFixed(2)}
+                  </span>
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium">Amount Paid:</span>
+                  <span className="font-bold">RM {paymentAmount.toFixed(2)}</span>
+                </div>
+
+                <div className="flex justify-between items-center pt-2 border-t">
+                  <span className="text-sm font-medium">Remaining Due:</span>
+                  <span
+                    className={`font-bold ${
+                      currentDue > 0 ? "text-destructive" : "text-green-600"
+                    }`}
+                  >
+                    RM {currentDue.toFixed(2)}
+                  </span>
+                </div>
+              </div>
             </div>
-          </div>
-        </DialogHeader>
 
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="paidAmount">Amount Paid *</Label>
-            <Input
-              id="paidAmount"
-              type="number"
-              value={paymentInfo.paidAmount}
-              onChange={(e) => {
-                setPaymentInfo({ paidAmount: e.target.value });
-                if (formErrors.paidAmount) {
-                  setFormErrors({ paidAmount: "" });
-                }
-              }}
-              placeholder="0.00"
-              className={formErrors.paidAmount ? "border-destructive" : ""}
-              min="0"
-              step="0.01"
-            />
-            {formErrors.paidAmount && (
-              <p className="text-sm text-destructive">
-                {formErrors.paidAmount}
-              </p>
-            )}
-          </div>
-
-          <div className="bg-muted/50 p-4 rounded-lg space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-sm font-medium">Total Due:</span>
-              <span className="font-bold text-destructive">
-                RM {totalDue.toFixed(2)}
-              </span>
-            </div>
-
-            <div className="flex justify-between items-center">
-              <span className="text-sm font-medium">Amount Paid:</span>
-              <span className="font-bold">RM {paymentAmount.toFixed(2)}</span>
-            </div>
-
-            <div className="flex justify-between items-center pt-2 border-t">
-              <span className="text-sm font-medium">Remaining Due:</span>
-              <span
-                className={`font-bold ${
-                  currentDue > 0 ? "text-destructive" : "text-green-600"
-                }`}
+            <div className="flex justify-end gap-2 mt-4">
+              <Button variant="outline" onClick={() => setOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={() => updateGuest()}
+                disabled={isPending || !paymentInfo.paidAmount}
+                className="gap-1"
               >
-                RM {currentDue.toFixed(2)}
-              </span>
+                {isPending ? "Processing..." : "Submit Payment"}
+              </Button>
             </div>
-          </div>
-        </div>
-
-        <div className="flex justify-end gap-2 mt-4">
-          <Button variant="outline" onClick={() => setOpen(false)}>
-            Cancel
-          </Button>
-          <Button
-            onClick={() => updateGuest()}
-            disabled={isPending || !paymentInfo.paidAmount}
-            className="gap-1"
-          >
-            {isPending ? "Processing..." : "Submit Payment"}
-          </Button>
-        </div>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );

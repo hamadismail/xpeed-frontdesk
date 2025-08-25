@@ -17,10 +17,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import axios from "axios";
 import { IRoom } from "@/src/models/room.model";
-import { GUEST_STATUS } from "@/src/models/book.model";
+// import { GUEST_STATUS } from "@/src/models/book.model";
 import PaymentModal from "../payments/PaymentModal";
 import { getRoomIcon } from "@/src/utils/getRoomIcon";
-
 
 export default function CheckOut({ room }: { room: IRoom }) {
   const queryClient = useQueryClient();
@@ -28,9 +27,9 @@ export default function CheckOut({ room }: { room: IRoom }) {
   const [acknowledged, setAcknowledged] = useState(false);
 
   const { data: singleGuest } = useQuery({
-    queryKey: ["books", room?.guestId],
+    queryKey: ["books", room?.guestId?._id],
     queryFn: () =>
-      axios.get(`/api/stayover/${room?.guestId}`).then((res) => res.data),
+      axios.get(`/api/stayover/${room?.guestId?._id}`).then((res) => res.data),
   });
 
   const dueAmount = singleGuest?.payment?.dueAmount || 0;
@@ -39,7 +38,8 @@ export default function CheckOut({ room }: { room: IRoom }) {
   const { mutate: checkOutMutation, isPending } = useMutation({
     mutationFn: async () => {
       const res = await axios.patch(`/api/rooms/${room?._id}`, {
-        status: GUEST_STATUS.CHECKED_OUT,
+        status: "CheckedOut", // This will set room to AVAILABLE
+        // If room was due out, we're now checking out the guest
       });
       return res.data;
     },

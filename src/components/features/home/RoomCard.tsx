@@ -27,8 +27,10 @@ export default function RoomCard({
       className={`flex flex-col justify-between p-4 transition-all hover:shadow-lg ${
         roomStatus === RoomStatus.AVAILABLE
           ? "border-green-200 dark:border-green-900"
-          : roomStatus === "RESERVED"
+          : roomStatus === RoomStatus.RESERVED
           ? "border-yellow-200 dark:border-yellow-900"
+          : roomStatus === RoomStatus.DUE_OUT
+          ? "border-blue-200 dark:border-blue-900"
           : "border-red-200 dark:border-red-900"
       }`}
     >
@@ -38,6 +40,7 @@ export default function RoomCard({
           {getRoomIcon(room.roomType)}
           {room.roomNo}
         </h3>
+
         <RoomBadge roomStatus={roomStatus} />
       </div>
 
@@ -83,6 +86,19 @@ export default function RoomCard({
               <span>Cancel</span>
             </Button>
             <BookRoomDialog room={room} />
+          </>
+        ) : roomStatus === RoomStatus.DUE_OUT ? (
+          <>
+            <Button
+              size="sm"
+              variant="secondary"
+              className="h-8 px-3 gap-1 "
+              disabled
+            >
+              <Clock className="h-4 w-4" />
+              <span>Due Out</span>
+            </Button>
+            <CheckOut room={room} />
           </>
         ) : (
           <>

@@ -1,7 +1,8 @@
 // app/api/products/route.ts
 // import { getRooms } from '@/src/lib/db';
 import { connectDB } from '@/src/lib/mongoose';
-import { Room } from '@/src/models/room.model';
+import { Room, RoomStatus } from '@/src/models/room.model';
+import { Book } from '@/src/models/book.model';
 import { NextResponse } from 'next/server';
 
 // export async function GET() {
@@ -15,16 +16,43 @@ export async function GET(request: Request) {
   const search = searchParams.get("search")?.toLowerCase() || "";
 
   await connectDB();
+
   // Get all rooms
-  const rooms = await Room.find().sort({ roomNo: 1 }).lean();
+  const rooms = await Room.find().sort({ roomNo: 1 }).populate("guestId").lean();
+
+  // For rooms that are OCCUPIED, check if they should be DUE_OUT
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // Set to start of day for comparison
+
+  // Process rooms to update DUE_OUT status if needed
+  const processedRooms = await Promise.all(rooms.map(async (room) => {
+    // If room is occupied, check if guest should have checked out
+    if (room.roomStatus === RoomStatus.OCCUPIED && room.guestId) {
+      // Get the booking for this room
+      const booking = await Book.findById(room.guestId);
+
+      if (booking && booking.stay?.departure) {
+        const departureDate = new Date(booking.stay.departure);
+        departureDate.setHours(0, 0, 0, 0);
+
+        // If departure date has passed, set room to DUE_OUT
+        if (departureDate <= today) {
+          return { ...room, roomStatus: RoomStatus.DUE_OUT };
+        }
+      }
+    }
+    return room;
+  }));
 
   // Filter by search term (if provided)
   const filteredRooms = search
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ? rooms.filter((room: any) =>
+    ? processedRooms.filter((room: any) =>
         room.roomNo?.toString().includes(search)
       )
-    : rooms;
+    : processedRooms;
 
   return NextResponse.json(filteredRooms);
 }
+
+

@@ -16,27 +16,27 @@ import {
 import { Sidebar, SidebarContent, SidebarGroup, SidebarHeader } from "../ui/sidebar";
 
 const navLinks = [
+  {
+    label: "Dashboard",
+    href: "/dashboard",
+    icon: <LayoutDashboard className="h-5 w-5" />,
+  },
   { label: "All Rooms", href: "/", icon: <Hotel className="h-5 w-5" /> },
   {
     label: "Calendar",
     href: "/calendar",
     icon: <Calendar className="h-5 w-5" />,
   },
-  {
-    label: "Dashboard",
-    href: "/dashboard",
-    icon: <LayoutDashboard className="h-5 w-5" />,
-  },
   { label: "Guests", href: "/guests", icon: <Users className="h-5 w-5" /> },
+  {
+    label: "Reservations",
+    href: "/reservation",
+    icon: <Clock className="h-5 w-5" />,
+  },
   {
     label: "Payments",
     href: "/payments",
     icon: <CreditCard className="h-5 w-5" />,
-  },
-  {
-    label: "Reservation",
-    href: "/reservation",
-    icon: <Clock className="h-5 w-5" />,
   },
 ];
 
@@ -55,8 +55,13 @@ export function AppSidebar() {
     <Sidebar className="border-r bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <SidebarHeader className="p-4 border-b">
         <div className="flex items-center gap-3">
-          <Hotel className="h-8 w-8 text-primary" />
-          <h1 className="text-xl font-bold">Hotel Manager</h1>
+          <div className="bg-primary rounded-lg p-2">
+            <Hotel className="h-6 w-6 text-white" />
+          </div>
+          <div>
+            <h1 className="text-lg font-bold text-primary">Eco Hotel</h1>
+            <p className="text-xs text-muted-foreground">Bukit Bintang</p>
+          </div>
         </div>
       </SidebarHeader>
 

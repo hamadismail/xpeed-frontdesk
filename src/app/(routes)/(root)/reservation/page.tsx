@@ -164,9 +164,14 @@ export default function Reservation() {
       if (res?.data?.success) {
         toast.success("Room reserved successfully!");
         queryClient.invalidateQueries({ queryKey: ["reserve"] });
+      } else if (res?.status === 409) {
+        // Conflict error - room already reserved/booked for selected dates
+        toast.error("Reservation failed", {
+          description: res?.data?.message || "Room not available for selected dates",
+        });
       } else {
-        toast.error("Booking failed", {
-          description: res?.data?.error || "Something went wrong",
+        toast.error("Reservation failed", {
+          description: res?.data?.message || "Something went wrong",
         });
       }
     },
@@ -913,11 +918,17 @@ export default function Reservation() {
                       fnfDiscount: parseFloat(
                         form.getValues("discount") || "0"
                       ),
-                      totalAmount:
-                        parseFloat(form.getValues("bookingFee") || "0") +
-                        parseFloat(form.getValues("sst") || "0") +
-                        parseFloat(form.getValues("tourismTax") || "0") -
-                        parseFloat(form.getValues("discount") || "0"),
+                      totalAmount: (() => {
+                        const bookingFee = parseFloat(form.getValues("bookingFee") || "0");
+                        const sst = parseFloat(form.getValues("sst") || "0");
+                        const tourismTax = parseFloat(form.getValues("tourismTax") || "0");
+                        const discount = parseFloat(form.getValues("discount") || "0");
+
+                        // Calculate SST as percentage of booking fee
+                        const sstAmount = (bookingFee * sst) / 100;
+
+                        return bookingFee + sstAmount + tourismTax - discount;
+                      })(),
                     },
                     reservationDate: new Date().toLocaleString(),
                   }}
@@ -933,3 +944,4 @@ export default function Reservation() {
     </div>
   );
 }
+

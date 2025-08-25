@@ -26,6 +26,7 @@ export enum PAYMENT_METHOD {
 }
 
 export interface IBook {
+  _id?: string;
   guest: {
     name: string;
     email: string;
