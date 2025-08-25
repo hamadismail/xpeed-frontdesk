@@ -112,7 +112,7 @@ export default function AllRooms() {
     } else if (reservation) {
       roomStatus = RoomStatus.RESERVED;
       guestName = reservation.guest.name;
-      guestStatus = "Reserved";
+      guestStatus = GUEST_STATUS.RESERVED;
     }
 
     return { roomStatus, guestName, guestStatus };

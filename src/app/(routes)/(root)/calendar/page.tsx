@@ -165,7 +165,8 @@ export default function CalendarPage() {
           const room = rooms.find((r) => r._id?.toString() === booking.roomId);
 
           // Check if this is a due out booking (departure date)
-          const isDueOut = currentDay.toDateString() === departure.toDateString();
+          const isDueOut =
+            currentDay.toDateString() === departure.toDateString();
           const guestStatus = isDueOut ? "Due Out" : booking.guest.status;
 
           bookingMap[dayKey].push({
@@ -300,7 +301,15 @@ export default function CalendarPage() {
   };
 
   const availableRooms = rooms.filter(
-    (room) => room.roomStatus !== RoomStatus.OCCUPIED
+    (room) =>
+      room.roomStatus !== RoomStatus.OCCUPIED &&
+      room.roomStatus !== RoomStatus.DUE_OUT
+  );
+
+  const occupaidRooms = rooms.filter(
+    (room) =>
+      room.roomStatus === RoomStatus.OCCUPIED ||
+      room.roomStatus === RoomStatus.DUE_OUT
   );
 
   return (
@@ -383,12 +392,7 @@ export default function CalendarPage() {
               <User className="h-5 w-5 text-red-500" />
               <div>
                 <p className="text-sm text-muted-foreground">Occupied</p>
-                <p className="text-2xl font-bold">
-                  {
-                    rooms.filter((r) => r.roomStatus === RoomStatus.OCCUPIED)
-                      .length
-                  }
-                </p>
+                <p className="text-2xl font-bold">{occupaidRooms.length}</p>
               </div>
             </div>
           </CardContent>

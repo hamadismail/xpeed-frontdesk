@@ -259,7 +259,7 @@ export function Invoice({
                 <tr className="bg-gray-50 font-semibold">
                   <td className="py-3 px-4">Due Amount</td>
                   <td className="text-right py-3 px-4 text-red-500">
-                    - RM {bookingInfo.payment.dueAmount.toFixed(2)}
+                    RM {bookingInfo.payment.dueAmount.toFixed(2)}
                   </td>
                 </tr>
 

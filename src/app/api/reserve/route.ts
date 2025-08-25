@@ -1,7 +1,7 @@
 "use server";
 import { connectDB } from "@/src/lib/mongoose";
 import { Reservation } from "@/src/models/reservation.model";
-import { Room, RoomStatus } from "@/src/models/room.model";
+import { Room } from "@/src/models/room.model";
 import { Book } from "@/src/models/book.model";
 import { startSession } from "mongoose";
 import { NextRequest, NextResponse } from "next/server";
@@ -73,8 +73,8 @@ export async function POST(req: NextRequest) {
       throw new Error("Room not found");
     }
 
-    room.roomStatus = RoomStatus.RESERVED;
-    await room.save({ session });
+    // room.roomStatus = RoomStatus.RESERVED;
+    // await room.save({ session });
 
     // Commit transaction
     await session.commitTransaction();

@@ -220,7 +220,7 @@ export default function BookRoomDialog({ room }: { room: IRoom }) {
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-4xl">
         <DialogHeader>
           <div className="flex items-center gap-3">
             {getRoomIcon(room.roomType)}
