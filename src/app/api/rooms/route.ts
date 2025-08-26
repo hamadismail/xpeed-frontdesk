@@ -36,7 +36,7 @@ export async function GET(request: Request) {
         departureDate.setHours(0, 0, 0, 0);
 
         // If departure date has passed, set room to DUE_OUT
-        if (departureDate <= today) {
+        if (departureDate < today) {
           return { ...room, roomStatus: RoomStatus.DUE_OUT };
         }
       }
