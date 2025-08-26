@@ -16,10 +16,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import axios, { AxiosError } from "axios";
 import { Label } from "@/src/components/ui/label";
-import { IBook } from "@/src/models/book.model";
-import { PaymentReceipt } from "@/src/components/layout/payment-receipt";
-
-
+import { IBook, PAYMENT_METHOD } from "@/src/models/book.model";
+// import { PaymentReceipt } from "@/src/components/layout/payment-receipt";
+import { PaymentInvoice } from "../../layout/PaymentInvoice";
 
 export default function PaymentModal({ guest }: { guest: IBook }) {
   const queryClient = useQueryClient();
@@ -37,6 +36,8 @@ export default function PaymentModal({ guest }: { guest: IBook }) {
 
   const [paymentInfo, setPaymentInfo] = useState({
     paidAmount: "",
+    remarks: "",
+    paymentMethod: PAYMENT_METHOD.CASH,
   });
 
   const validateForm = () => {
@@ -81,7 +82,11 @@ export default function PaymentModal({ guest }: { guest: IBook }) {
   });
 
   const resetForm = () => {
-    setPaymentInfo({ paidAmount: "" });
+    setPaymentInfo({
+      paidAmount: "",
+      remarks: "",
+      paymentMethod: PAYMENT_METHOD.CASH,
+    });
     setFormErrors({ paidAmount: "" });
   };
 
@@ -96,13 +101,16 @@ export default function PaymentModal({ guest }: { guest: IBook }) {
   const paymentAmount = Number(paymentInfo.paidAmount) || 0;
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => {
-      setOpen(isOpen);
-      if (!isOpen) {
-        setShowReceipt(false);
-        resetForm();
-      }
-    }}>
+    <Dialog
+      open={open}
+      onOpenChange={(isOpen) => {
+        setOpen(isOpen);
+        if (!isOpen) {
+          setShowReceipt(false);
+          resetForm();
+        }
+      }}
+    >
       <DialogTrigger asChild>
         <Button
           size="sm"
@@ -117,51 +125,70 @@ export default function PaymentModal({ guest }: { guest: IBook }) {
 
       <DialogContent className="sm:max-w-[600px]">
         {showReceipt ? (
-          <PaymentReceipt
-            paymentInfo={{
-              guest: {
-                name: singleGuest?.guest.name || "",
-                email: singleGuest?.guest.email || "",
-                phone: singleGuest?.guest.phone || "",
-                country: singleGuest?.guest.country || "",
-                passport: singleGuest?.guest.passport || "",
-              },
-              stay: {
-                arrival: singleGuest?.stay.arrival ? new Date(singleGuest.stay.arrival) : new Date(),
-                departure: singleGuest?.stay.departure ? new Date(singleGuest.stay.departure) : new Date(),
-                adults: singleGuest?.stay.adults || 0,
-                children: singleGuest?.stay.children || 0,
-                nights: Math.ceil(
-                  (new Date(singleGuest?.stay.departure || new Date()).getTime() -
-                    new Date(singleGuest?.stay.arrival || new Date()).getTime()) /
-                    (1000 * 60 * 60 * 24)
-                ) || 1,
-              },
-              room: {
-                number: (singleGuest?.roomId as unknown as string) || "",
-                type: "",
-                floor: "",
-                price: singleGuest?.payment?.roomPrice || 0,
-              },
-              payment: {
-                subtotal: singleGuest?.payment?.subtotal || 0,
-                sst: singleGuest?.payment?.sst || 0,
-                tourismTax: singleGuest?.payment?.tourismTax || 0,
-                discount: singleGuest?.payment?.discount || 0,
-                total: singleGuest?.payment?.subtotal || 0,
-                paidAmount: (singleGuest?.payment.paidAmount || 0) + paymentAmount,
-                dueAmount: currentDue,
-                method: singleGuest?.payment?.paymentMethod || "Cash",
-                paymentDate: new Date(),
-              },
-              bookingId: guest._id || "",
-              paymentId: `PAY-${Date.now()}`,
-            }}
-            onPrint={() => {
-              setShowReceipt(false);
-              setOpen(false);
-            }}
-          />
+          <div className="grid gap-6 overflow-scroll max-h-80">
+            <PaymentInvoice
+              bookingInfo={{
+                guest: {
+                  name: singleGuest?.guest.name || "",
+                  // email: singleGuest?.guest.email || "",
+                  phone: singleGuest?.guest.phone || "",
+                  // country: singleGuest?.guest.country || "",
+                  // passport: singleGuest?.guest.passport || "",
+                },
+                stay: {
+                  arrival: singleGuest?.stay.arrival
+                    ? new Date(singleGuest.stay.arrival)
+                    : new Date(),
+                  departure: singleGuest?.stay.departure
+                    ? new Date(singleGuest.stay.departure)
+                    : new Date(),
+                  // adults: singleGuest?.stay.adults || 0,
+                  // children: singleGuest?.stay.children || 0,
+                  // nights:
+                  //   Math.ceil(
+                  //     (new Date(
+                  //       singleGuest?.stay.departure || new Date()
+                  //     ).getTime() -
+                  //       new Date(
+                  //         singleGuest?.stay.arrival || new Date()
+                  //       ).getTime()) /
+                  //       (1000 * 60 * 60 * 24)
+                  //   ) || 1,
+                },
+                room: {
+                  number: (singleGuest?.roomId as unknown as string) || "",
+                  type: "",
+                  // floor: "",
+                  // price: singleGuest?.payment?.roomPrice || 0,
+                },
+                payment: {
+                  // subtotal: singleGuest?.payment?.subtotal || 0,
+                  // sst: singleGuest?.payment?.sst || 0,
+                  // tourismTax: singleGuest?.payment?.tourismTax || 0,
+                  // discount: singleGuest?.payment?.discount || 0,
+                  // total: singleGuest?.payment?.subtotal || 0,
+                  paidAmount:
+                    (singleGuest?.payment.paidAmount || 0) + paymentAmount,
+                  // dueAmount: currentDue,
+                  method: singleGuest?.payment?.paymentMethod || "Cash",
+                  // paymentDate: new Date(),
+                },
+                paymentId: `PAY-${Date.now()
+                  .toString(36)
+                  .toUpperCase()}-${Math.random()
+                  .toString(36)
+                  .substring(2, 10)
+                  .toUpperCase()}`,
+                bookingDate: new Date(),
+                // paymentId: `PAY-${Date.now()}`,
+              }}
+              onConfirmBooking={() => {
+                setShowReceipt(false);
+                setOpen(false);
+              }}
+              isBooking={isPending}
+            />
+          </div>
         ) : (
           <>
             <DialogHeader>
@@ -171,7 +198,9 @@ export default function PaymentModal({ guest }: { guest: IBook }) {
                   <DialogTitle className="text-xl font-bold">
                     Payment Details
                   </DialogTitle>
-                  <DialogDescription>Record payment for guest</DialogDescription>
+                  <DialogDescription>
+                    Record payment for guest
+                  </DialogDescription>
                 </div>
               </div>
             </DialogHeader>
@@ -184,7 +213,10 @@ export default function PaymentModal({ guest }: { guest: IBook }) {
                   type="number"
                   value={paymentInfo.paidAmount}
                   onChange={(e) => {
-                    setPaymentInfo({ paidAmount: e.target.value });
+                    setPaymentInfo({
+                      ...paymentInfo,
+                      paidAmount: e.target.value,
+                    });
                     if (formErrors.paidAmount) {
                       setFormErrors({ paidAmount: "" });
                     }
@@ -201,6 +233,47 @@ export default function PaymentModal({ guest }: { guest: IBook }) {
                 )}
               </div>
 
+              {/* Remarks */}
+              <div className="space-y-2">
+                <Label>Remarks</Label>
+                <Input
+                  type="text"
+                  value={paymentInfo.remarks}
+                  onChange={(e) =>
+                    setPaymentInfo({
+                      ...paymentInfo,
+                      remarks: e.target.value,
+                    })
+                  }
+                  placeholder="Type remarks"
+                />
+              </div>
+
+              {/* Payment Method */}
+              <div className="space-y-2 col-span-2">
+                <Label>Payment Method</Label>
+                <div className="flex gap-4">
+                  {Object.values(PAYMENT_METHOD).map((method) => (
+                    <Button
+                      key={method}
+                      variant={
+                        paymentInfo.paymentMethod === method
+                          ? "default"
+                          : "outline"
+                      }
+                      onClick={() =>
+                        setPaymentInfo({
+                          ...paymentInfo,
+                          paymentMethod: method,
+                        })
+                      }
+                    >
+                      {method}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
               <div className="bg-muted/50 p-4 rounded-lg space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium">Total Due:</span>
@@ -211,7 +284,9 @@ export default function PaymentModal({ guest }: { guest: IBook }) {
 
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium">Amount Paid:</span>
-                  <span className="font-bold">RM {paymentAmount.toFixed(2)}</span>
+                  <span className="font-bold">
+                    RM {paymentAmount.toFixed(2)}
+                  </span>
                 </div>
 
                 <div className="flex justify-between items-center pt-2 border-t">
@@ -232,7 +307,7 @@ export default function PaymentModal({ guest }: { guest: IBook }) {
                 Cancel
               </Button>
               <Button
-                onClick={() => updateGuest()}
+                onClick={() => {updateGuest()}}
                 disabled={isPending || !paymentInfo.paidAmount}
                 className="gap-1"
               >

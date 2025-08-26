@@ -39,8 +39,8 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { GUEST_STATUS, OTAS, PAYMENT_METHOD } from "@/src/models/book.model";
-import { Invoice } from "@/src/components/layout/invoice";
 import { getRoomIcon } from "@/src/utils/getRoomIcon";
+import { PaymentInvoice } from "../../layout/PaymentInvoice";
 
 export default function BookRoomDialog({ room }: { room: IRoom }) {
   const queryClient = useQueryClient();
@@ -524,6 +524,7 @@ export default function BookRoomDialog({ room }: { room: IRoom }) {
                 />
               </div>
 
+              {/* Discount */}
               <div className="space-y-2">
                 <Label>Discount</Label>
                 <Input
@@ -682,42 +683,45 @@ export default function BookRoomDialog({ room }: { room: IRoom }) {
         {/* Step 4: Confirmation */}
         {step === 4 && (
           <div className="grid gap-6 overflow-scroll max-h-80">
-            <Invoice
+            <PaymentInvoice
               bookingInfo={{
                 guest: {
                   name: guestInfo.name,
-                  email: guestInfo.email,
+                  // email: guestInfo.email,
                   phone: guestInfo.phone,
-                  country: guestInfo.country,
-                  passport: guestInfo.passport,
+                  // country: guestInfo.country,
+                  // passport: guestInfo.passport,
                 },
                 stay: {
                   arrival: stayInfo.arrival!,
                   departure: stayInfo.departure!,
-                  adults: stayInfo.adults,
-                  children: stayInfo.children,
-                  nights: calculateNights(),
+                  // adults: stayInfo.adults,
+                  // children: stayInfo.children,
+                  // nights: calculateNights(),
                 },
                 room: {
                   number: room.roomNo,
                   type: room.roomType,
-                  floor: room.roomFloor,
-                  price: parseFloat(paymentInfo.roomPrice) || 0,
+                  // floor: room.roomFloor,
+                  // price: parseFloat(paymentInfo.roomPrice) || 0,
                 },
                 payment: {
-                  subtotal:
-                    (parseFloat(paymentInfo.roomPrice) || 0) *
-                    calculateNights(),
-                  sst: parseFloat(paymentInfo.sst) || 0,
-                  tourismTax: parseFloat(paymentInfo.tourismTax) || 0,
-                  discount: parseFloat(paymentInfo.discount) || 0,
-                  total: calculateTotal(),
+                  // subtotal:
+                  //   (parseFloat(paymentInfo.roomPrice) || 0) *
+                  //   calculateNights(),
+                  // sst: parseFloat(paymentInfo.sst) || 0,
+                  // tourismTax: parseFloat(paymentInfo.tourismTax) || 0,
+                  // discount: parseFloat(paymentInfo.discount) || 0,
+                  // total: calculateTotal(),
                   paidAmount: parseFloat(paymentInfo.paidAmount) || 0,
-                  dueAmount: calculateDue(),
+                  // dueAmount: calculateDue(),
                   method: paymentInfo.paymentMethod,
+                  remarks: paymentInfo.remarks,
                 },
                 bookingDate: new Date(),
-                bookingId: `BOOK-${Math.random()
+                paymentId: `PAY-${Date.now()
+                  .toString(36)
+                  .toUpperCase()}-${Math.random()
                   .toString(36)
                   .substring(2, 10)
                   .toUpperCase()}`,
