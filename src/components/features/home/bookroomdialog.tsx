@@ -103,7 +103,9 @@ export default function BookRoomDialog({ room }: { room: IRoom }) {
       // Check if it's a conflict error (409) from our validation
       if (axios.isAxiosError(error) && error.response?.status === 409) {
         toast.error("Booking failed", {
-          description: error.response.data?.message || "Room not available for selected dates",
+          description:
+            error.response.data?.message ||
+            "Room not available for selected dates",
         });
       } else if (axios.isAxiosError(error)) {
         toast.error("Booking failed", {
@@ -220,7 +222,7 @@ export default function BookRoomDialog({ room }: { room: IRoom }) {
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-4xl">
+      <DialogContent className="sm:max-w-4xl min-h-[90vh]">
         <DialogHeader>
           <div className="flex items-center gap-3">
             {getRoomIcon(room.roomType)}
@@ -236,7 +238,7 @@ export default function BookRoomDialog({ room }: { room: IRoom }) {
         </DialogHeader>
 
         {/* Progress Steps */}
-        <div className="flex justify-between mb-6">
+        <div className="flex justify-center gap-8 md:gap-16 mb-6">
           {[1, 2, 3, 4].map((stepNumber) => (
             <div key={stepNumber} className="flex flex-col items-center">
               <div
@@ -364,69 +366,58 @@ export default function BookRoomDialog({ room }: { room: IRoom }) {
         {step === 2 && (
           <div className="grid gap-4">
             <div className="grid grid-cols-2 gap-4">
+              {/* stay date */}
               <div className="space-y-2">
-                <Label>Checked In *</Label>
+                <Label>Stay Dates *</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
                       variant={"outline"}
                       className={cn(
                         "w-full justify-start text-left font-normal",
-                        !stayInfo.arrival && "text-muted-foreground"
+                        !stayInfo.arrival &&
+                          !stayInfo.departure &&
+                          "text-muted-foreground"
                       )}
                     >
                       <Calendar className="mr-2 h-4 w-4" />
-                      {stayInfo.arrival ? (
-                        format(stayInfo.arrival, "PPP")
+                      {stayInfo.arrival && stayInfo.departure ? (
+                        `${format(stayInfo.arrival, "MMM dd")} - ${format(
+                          stayInfo.departure,
+                          "MMM dd, yyyy"
+                        )}`
+                      ) : stayInfo.arrival ? (
+                        `${format(stayInfo.arrival, "PPP")} - Select departure`
                       ) : (
-                        <span>Pick a date</span>
+                        <span>Select arrival and departure dates</span>
                       )}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 max-h-[280px] overflow-auto">
+                  <PopoverContent
+                    className="w-auto p-0"
+                    align="center"
+                    side="right"
+                  >
                     <DatePicker
-                      mode="single"
-                      selected={stayInfo.arrival}
-                      onSelect={(date) =>
-                        setStayInfo({ ...stayInfo, arrival: date })
-                      }
+                      mode="range"
+                      selected={{
+                        from: stayInfo.arrival,
+                        to: stayInfo.departure,
+                      }}
+                      onSelect={(range) => {
+                        if (range?.from) {
+                          setStayInfo({
+                            ...stayInfo,
+                            arrival: range.from,
+                            departure: range.to,
+                          });
+                        }
+                      }}
                       disabled={{
                         before: new Date(new Date().setHours(0, 0, 0, 0)),
                       }}
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Checked Out *</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !stayInfo.departure && "text-muted-foreground"
-                      )}
-                    >
-                      <Calendar className="mr-2 h-4 w-4" />
-                      {stayInfo.departure ? (
-                        format(stayInfo.departure, "PPP")
-                      ) : (
-                        <span>Pick a date</span>
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 max-h-[280px] overflow-auto">
-                    <DatePicker
-                      mode="single"
-                      selected={stayInfo.departure}
-                      onSelect={(date) =>
-                        setStayInfo({ ...stayInfo, departure: date })
-                      }
-                      disabled={{
-                        before: stayInfo.arrival || new Date(),
-                      }}
+                      numberOfMonths={2}
+                      defaultMonth={stayInfo.arrival || new Date()}
                     />
                   </PopoverContent>
                 </Popover>
@@ -632,20 +623,21 @@ export default function BookRoomDialog({ room }: { room: IRoom }) {
                   </span>
                 </div>
               )}
-              {paymentInfo.tourismTax && parseFloat(paymentInfo.tourismTax) > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">
-                    Tourism Tax ({calculateNights()} nights):
-                  </span>
-                  <span className="font-medium">
-                    RM{" "}
-                    {(
-                      (parseFloat(paymentInfo.tourismTax) || 0) *
-                      calculateNights()
-                    ).toFixed(2)}
-                  </span>
-                </div>
-              )}
+              {paymentInfo.tourismTax &&
+                parseFloat(paymentInfo.tourismTax) > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-sm text-muted-foreground">
+                      Tourism Tax ({calculateNights()} nights):
+                    </span>
+                    <span className="font-medium">
+                      RM{" "}
+                      {(
+                        (parseFloat(paymentInfo.tourismTax) || 0) *
+                        calculateNights()
+                      ).toFixed(2)}
+                    </span>
+                  </div>
+                )}
               {paymentInfo.discount && parseFloat(paymentInfo.discount) > 0 && (
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">
@@ -658,7 +650,9 @@ export default function BookRoomDialog({ room }: { room: IRoom }) {
               )}
               <div className="flex justify-between mt-2 pt-2 border-t">
                 <span className="text-sm font-medium">Total Amount:</span>
-                <span className="font-bold">RM {calculateTotal().toFixed(2)}</span>
+                <span className="font-bold">
+                  RM {calculateTotal().toFixed(2)}
+                </span>
               </div>
               <div className="flex justify-between mt-2 pt-2 border-t">
                 <span className="text-sm font-medium">Total Paid:</span>

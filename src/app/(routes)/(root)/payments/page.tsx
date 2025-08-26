@@ -28,23 +28,9 @@ import {
 } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 import PaymentModal from "@/src/components/features/payments/PaymentModal";
+import { IBook } from "@/src/models/book.model";
 
-interface GuestPayment {
-  _id: string;
-  guest: {
-    name: string;
-    email: string;
-    phone: string;
-  };
-  payment: {
-    subtotal: number;
-    paidAmount: number;
-    dueAmount: number;
-    paymentMethod: string;
-  };
-  roomId: string;
-  createdAt: string;
-}
+
 
 const fetchGuestPayments = async (page: number, search: string) => {
   const { data } = await axios.get("/api/payments", {
@@ -69,12 +55,12 @@ export default function PaymentTable() {
   // Calculate totals
   const totalPaid =
     data?.payments?.reduce(
-      (sum: number, guest: GuestPayment) => sum + guest.payment.paidAmount,
+      (sum: number, guest: IBook) => sum + guest.payment.paidAmount,
       0
     ) || 0;
   const totalDue =
     data?.payments?.reduce(
-      (sum: number, guest: GuestPayment) => sum + guest.payment.dueAmount,
+      (sum: number, guest: IBook) => sum + guest.payment.dueAmount,
       0
     ) || 0;
 
@@ -169,6 +155,7 @@ export default function PaymentTable() {
             <TableRow>
               <TableHead>Guest</TableHead>
               <TableHead>Contact</TableHead>
+              <TableHead>Room No.</TableHead>
               <TableHead>Subtotal</TableHead>
               <TableHead>Paid</TableHead>
               <TableHead>Due</TableHead>
@@ -198,6 +185,9 @@ export default function PaymentTable() {
                       <Skeleton className="h-4 w-[80px] ml-auto" />
                     </TableCell>
                     <TableCell>
+                      <Skeleton className="h-4 w-[80px] ml-auto" />
+                    </TableCell>
+                    <TableCell>
                       <Skeleton className="h-4 w-[60px]" />
                     </TableCell>
                     <TableCell>
@@ -207,18 +197,18 @@ export default function PaymentTable() {
                 ))
             ) : isError ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center text-red-500">
+                <TableCell colSpan={8} className="text-center text-red-500">
                   Failed to load payments
                 </TableCell>
               </TableRow>
             ) : data?.payments?.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center">
+                <TableCell colSpan={8} className="text-center">
                   No payments found
                 </TableCell>
               </TableRow>
             ) : (
-              data?.payments?.map((guest: GuestPayment) => (
+              data?.payments?.map((guest: IBook) => (
                 <TableRow key={guest._id}>
                   <TableCell className="font-medium">
                     {guest.guest.name}
@@ -230,6 +220,9 @@ export default function PaymentTable() {
                     <div className="text-sm text-muted-foreground">
                       {guest.guest.phone}
                     </div>
+                  </TableCell>
+                  <TableCell className="font-medium">
+                    {(guest.roomId as { roomNo: string })?.roomNo}
                   </TableCell>
                   <TableCell>
                     {guest?.payment?.subtotal?.toLocaleString("en-IN", {

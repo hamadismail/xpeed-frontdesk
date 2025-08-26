@@ -91,7 +91,7 @@ export default function StayOver({ room }: { room: IRoom }) {
     },
     onSuccess: () => {
       toast.success("Guest Stayed Over successfully!");
-      queryClient.invalidateQueries({ queryKey: ["books"] });
+      queryClient.invalidateQueries({ queryKey: ["rooms"] });
       resetForm();
       setOpen(false);
     },

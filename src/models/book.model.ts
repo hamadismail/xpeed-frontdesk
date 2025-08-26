@@ -54,7 +54,7 @@ export interface IBook {
     paymentMethod: PAYMENT_METHOD;
     remarks: string;
   };
-  roomId?: Types.ObjectId;
+  roomId?: Types.ObjectId | { roomNo: string };
 }
 
 const bookSchema = new Schema<IBook>(

@@ -38,6 +38,7 @@ export async function GET(request: Request) {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(itemsPerPage)
+      .populate("roomId", "roomNo -_id")
       .lean();
 
     return NextResponse.json({

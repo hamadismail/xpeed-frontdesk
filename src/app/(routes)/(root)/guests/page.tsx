@@ -37,34 +37,7 @@ import {
 import { format } from "date-fns";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { Badge } from "@/src/components/ui/badge";
-
-interface Guest {
-  _id: string;
-  guest: {
-    name: string;
-    email: string;
-    phone: string;
-    country: string;
-    passport: string;
-    status: string;
-  };
-  stay: {
-    arrival: Date;
-    departure: Date;
-    adults: number;
-    children: number;
-  };
-  payment: {
-    roomPrice: number;
-    subtotal: number;
-    paidAmount: number;
-    dueAmount: number;
-    paymentMethod: string;
-  };
-  roomId: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
+import { IBook } from "@/src/models/book.model";
 
 const fetchGuests = async (
   page: number,
@@ -85,7 +58,7 @@ export default function GuestTable() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [countryFilter, setCountryFilter] = useState("all");
-  const [selectedGuest, setSelectedGuest] = useState<Guest | null>(null);
+  const [selectedGuest, setSelectedGuest] = useState<IBook | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const { data, isLoading, isError } = useQuery({
@@ -94,7 +67,7 @@ export default function GuestTable() {
     // keepPreviousData: true
   });
 
-  const handleViewGuest = (guest: Guest) => {
+  const handleViewGuest = (guest: IBook) => {
     setSelectedGuest(guest);
     setIsDialogOpen(true);
   };
@@ -155,6 +128,7 @@ export default function GuestTable() {
               <TableHead>Name</TableHead>
               <TableHead>Contact</TableHead>
               <TableHead>Country</TableHead>
+              <TableHead>Room No</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Arrival</TableHead>
               <TableHead>Departure</TableHead>
@@ -188,22 +162,25 @@ export default function GuestTable() {
                     <TableCell>
                       <Skeleton className="h-4 w-[100px]" />
                     </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-[100px]" />
+                    </TableCell>
                   </TableRow>
                 ))
             ) : isError ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center text-red-500">
+                <TableCell colSpan={8} className="text-center text-red-500">
                   Failed to load guests
                 </TableCell>
               </TableRow>
             ) : data?.guests?.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center">
+                <TableCell colSpan={8} className="text-center">
                   No guests found
                 </TableCell>
               </TableRow>
             ) : (
-              data?.guests?.map((guest: Guest) => (
+              data?.guests?.map((guest: IBook) => (
                 <TableRow key={guest._id}>
                   <TableCell className="font-medium">
                     {guest.guest.name}
@@ -217,6 +194,9 @@ export default function GuestTable() {
                     </div>
                   </TableCell>
                   <TableCell>{guest.guest.country}</TableCell>
+                  <TableCell>
+                    {(guest.roomId as { roomNo: string })?.roomNo}
+                  </TableCell>
                   <TableCell>
                     <Badge
                       className={`capitalize ${
@@ -251,6 +231,7 @@ export default function GuestTable() {
         </Table>
       </div>
 
+      {/* pagination */}
       <div className="flex items-center justify-between px-2">
         <div className="text-sm text-muted-foreground">
           Page {page} of {data?.totalPages || 1}
@@ -344,7 +325,9 @@ export default function GuestTable() {
                 </p>
                 <p>
                   <span className="text-muted-foreground">Room ID:</span>{" "}
-                  {selectedGuest.roomId}
+                  {selectedGuest.roomId
+                    ? selectedGuest.roomId.toString()
+                    : "N/A"}
                 </p>
               </div>
               <div className="col-span-2 space-y-2 border-t pt-4">

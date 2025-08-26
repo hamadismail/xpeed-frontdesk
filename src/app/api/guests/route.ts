@@ -36,26 +36,26 @@ export async function GET(request: Request) {
       .sort({ "stay.arrival": -1 })
       .skip(skip)
       .limit(itemsPerPage)
-      .lean(); // Use lean() for better performance with plain JavaScript objects
+      .populate("roomId", "roomNo -_id").lean();
 
     // Transform the data
-    const transformedGuests = guests.map((guest) => ({
-      _id: guest._id,
-      guest: guest.guest,
-      stay: {
-        arrival: guest.stay.arrival,
-        departure: guest.stay.departure,
-        adults: guest.stay.adults,
-        children: guest.stay.children,
-      },
-      payment: guest.payment,
-      roomId: guest.roomId.toString(),
-      createdAt: guest.createdAt,
-      updatedAt: guest.updatedAt,
-    }));
+    // const transformedGuests = guests.map((guest) => ({
+    //   _id: guest._id,
+    //   guest: guest.guest,
+    //   stay: {
+    //     arrival: guest.stay.arrival,
+    //     departure: guest.stay.departure,
+    //     adults: guest.stay.adults,
+    //     children: guest.stay.children,
+    //   },
+    //   payment: guest.payment,
+    //   roomId: guest.roomId,
+    //   createdAt: guest.createdAt,
+    //   updatedAt: guest.updatedAt,
+    // }));
 
     return NextResponse.json({
-      guests: transformedGuests,
+      guests,
       totalPages: Math.ceil(totalCount / itemsPerPage),
       hasMore: skip + itemsPerPage < totalCount,
     });

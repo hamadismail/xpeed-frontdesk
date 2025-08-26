@@ -19,17 +19,9 @@ import { Label } from "@/src/components/ui/label";
 import { IBook } from "@/src/models/book.model";
 import { PaymentReceipt } from "@/src/components/layout/payment-receipt";
 
-interface GuestPayment {
-  _id: string;
-  payment: {
-    paidAmount: number;
-    dueAmount: number;
-  };
-  roomId: string;
-  createdAt: string;
-}
 
-export default function PaymentModal({ guest }: { guest: GuestPayment }) {
+
+export default function PaymentModal({ guest }: { guest: IBook }) {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [showReceipt, setShowReceipt] = useState(false);
