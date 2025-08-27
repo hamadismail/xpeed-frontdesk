@@ -34,6 +34,7 @@ export async function GET(request: Request) {
     // Get paginated results using Mongoose
     const guests = await Book.find(query)
       .sort({ "stay.arrival": -1 })
+      .select("-createdAt -updatedAt")
       .skip(skip)
       .limit(itemsPerPage)
       .populate("roomId", "roomNo -_id").lean();

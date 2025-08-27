@@ -34,7 +34,7 @@ export async function GET(request: Request) {
       ...query,
       "guest.status": GUEST_STATUS.CHECKED_IN,
     })
-      .select("guest payment roomId createdAt")
+      .select("guest payment roomId")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(itemsPerPage)

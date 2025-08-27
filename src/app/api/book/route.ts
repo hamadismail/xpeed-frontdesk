@@ -9,7 +9,9 @@ export async function GET() {
     await connectDB();
 
     // Get all bookings and populate room information
-    const bookings = await Book.find().sort({ createdAt: -1 }).lean();
+    const bookings = await Book.find({}, { createdAt: 0, updatedAt: 0 })
+      .sort({ createdAt: -1 })
+      .lean();
 
     return NextResponse.json(bookings);
   } catch (error) {
@@ -118,4 +120,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-
