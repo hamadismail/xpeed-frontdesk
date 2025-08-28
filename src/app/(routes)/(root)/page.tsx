@@ -31,7 +31,9 @@ export default function AllRooms() {
     queryFn: () => axios.get("/api/book").then((res) => res.data),
   });
 
-  const { data: allReservations = [], isLoading: reserveLoading } = useQuery<IReservation[]>({
+  const { data: allReservations = [], isLoading: reserveLoading } = useQuery<
+    IReservation[]
+  >({
     queryKey: ["reserve"],
     queryFn: () => axios.get("/api/reserve").then((res) => res.data),
   });
@@ -93,6 +95,8 @@ export default function AllRooms() {
     let roomStatus = room.roomStatus; // Default to room's actual status
     let guestName = "";
     let guestStatus = "";
+    let arrival = new Date();
+    let departure = new Date();
 
     // If room is due out, show that status regardless of date
     if (room.roomStatus === RoomStatus.DUE_OUT) {
@@ -104,18 +108,24 @@ export default function AllRooms() {
       if (dueOutBooking) {
         guestName = dueOutBooking.guest.name;
         guestStatus = "Due Out";
+        arrival = dueOutBooking.stay.arrival;
+        departure = dueOutBooking.stay.departure;
       }
     } else if (booking) {
       roomStatus = RoomStatus.OCCUPIED;
       guestName = booking.guest.name;
       guestStatus = booking.guest.status;
+      arrival = booking.stay.arrival;
+      departure = booking.stay.departure;
     } else if (reservation) {
       roomStatus = RoomStatus.RESERVED;
       guestName = reservation.guest.name;
       guestStatus = GUEST_STATUS.RESERVED;
+      arrival = reservation.room.arrival;
+      departure = reservation.room.departure;
     }
 
-    return { roomStatus, guestName, guestStatus };
+    return { roomStatus, guestName, guestStatus, arrival, departure };
   };
 
   // Count rooms by status for the selected date
@@ -143,7 +153,6 @@ export default function AllRooms() {
   if (isLoading || reserveLoading || bookLoading) {
     return <LoadingSpiner />;
   }
-
 
   return (
     <div className="space-y-6 p-6">
@@ -192,7 +201,8 @@ export default function AllRooms() {
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filteredRooms.map((room) => {
-            const { roomStatus, guestName, guestStatus } = roomInfo(room);
+            const { roomStatus, guestName, guestStatus, arrival, departure } =
+              roomInfo(room);
             return (
               <RoomCard
                 key={room._id?.toString()}
@@ -200,6 +210,8 @@ export default function AllRooms() {
                 room={room}
                 guestName={guestName}
                 guestStatus={guestStatus}
+                arrival={arrival}
+                departure={departure}
               />
             );
           })}

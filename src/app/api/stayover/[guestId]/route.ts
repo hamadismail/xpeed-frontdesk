@@ -76,7 +76,7 @@ export async function PATCH(
       guestId,
       {
         $set: {
-          "stay.arrival": bookingInfo.stay.arrival,
+          // "stay.arrival": bookingInfo.stay.arrival,
           "stay.departure": bookingInfo.stay.departure,
           "payment.subtotal": bookingInfo.payment.subtotal,
           "payment.discount": bookingInfo.payment.discount,

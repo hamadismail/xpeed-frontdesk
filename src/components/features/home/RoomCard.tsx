@@ -14,6 +14,8 @@ type RoomCardProps = {
   room: IRoom;
   guestName: string;
   guestStatus: string;
+  arrival: Date;
+  departure: Date;
 };
 
 export default function RoomCard({
@@ -21,6 +23,8 @@ export default function RoomCard({
   room,
   guestName,
   guestStatus,
+  arrival,
+  departure,
 }: RoomCardProps) {
   return (
     <Card
@@ -64,7 +68,17 @@ export default function RoomCard({
               <User2 className="h-4 w-4" />
               <span>{guestName}</span>
             </div>
-            <div className="text-xs mt-1">Status: {guestStatus}</div>
+            {/* <div className="text-xs mt-1">Status: {guestStatus}</div> */}
+            <div className="text-xs mt-1">
+              Arrival:{" "}
+              {arrival ? new Date(arrival).toLocaleDateString("en-GB") : "N/A"}
+            </div>
+            <div className="text-xs mt-1">
+              Departure:{" "}
+              {departure
+                ? new Date(departure).toLocaleDateString("en-GB")
+                : "N/A"}
+            </div>
           </div>
         )}
       </div>

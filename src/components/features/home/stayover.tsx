@@ -12,7 +12,7 @@ import {
 } from "@/src/components/ui/dialog";
 import { Input } from "@/src/components/ui/input";
 import { ArrowLeft, BedDouble, Calendar } from "lucide-react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import axios from "axios";
 import { IRoom } from "@/src/models/room.model";
@@ -28,9 +28,10 @@ import { Label } from "@/src/components/ui/label";
 import { IBook, PAYMENT_METHOD } from "@/src/models/book.model";
 import { getRoomIcon } from "@/src/utils/getRoomIcon";
 import { PaymentInvoice } from "../../layout/PaymentInvoice";
+import { useInvalidateBookingQueries } from "@/src/hooks/useQuery";
 
 export default function StayOver({ room }: { room: IRoom }) {
-  const queryClient = useQueryClient();
+  const invalidate = useInvalidateBookingQueries();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(1);
   const [formErrors, setFormErrors] = useState({
@@ -78,7 +79,7 @@ export default function StayOver({ room }: { room: IRoom }) {
       const payload = {
         bookingInfo: {
           stay: {
-            arrival: stayInfo.arrival || new Date(),
+            // arrival: stayInfo.arrival || new Date(),
             departure: stayInfo.departure,
           },
           payment: {
@@ -100,7 +101,7 @@ export default function StayOver({ room }: { room: IRoom }) {
     },
     onSuccess: () => {
       toast.success("Guest Stayed Over successfully!");
-      queryClient.invalidateQueries({ queryKey: ["rooms"] });
+      invalidate();
       resetForm();
       setOpen(false);
     },
@@ -204,6 +205,7 @@ export default function StayOver({ room }: { room: IRoom }) {
           <>
             <div className="grid gap-4">
               <div className="grid grid-cols-2 gap-4">
+                {/* New chekout date */}
                 <div className="space-y-2">
                   <Label>New Check Out Date *</Label>
                   <Popover>
@@ -240,7 +242,7 @@ export default function StayOver({ room }: { room: IRoom }) {
                           }
                         }}
                         disabled={{
-                          before: stayInfo.arrival || new Date(),
+                          before: singleGuest?.stay.departure || new Date(),
                         }}
                       />
                     </PopoverContent>
