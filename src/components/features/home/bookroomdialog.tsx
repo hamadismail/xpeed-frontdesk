@@ -18,7 +18,7 @@ import {
   Check,
   Calendar,
 } from "lucide-react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import axios from "axios";
 import { IRoom } from "@/src/models/room.model";
@@ -41,9 +41,10 @@ import {
 import { GUEST_STATUS, OTAS, PAYMENT_METHOD } from "@/src/models/book.model";
 import { getRoomIcon } from "@/src/utils/getRoomIcon";
 import { PaymentInvoice } from "../../layout/PaymentInvoice";
+import { useInvalidateBookingQueries } from "@/src/hooks/useQuery";
 
 export default function BookRoomDialog({ room }: { room: IRoom }) {
-  const queryClient = useQueryClient();
+  const invalidate = useInvalidateBookingQueries();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(1);
 
@@ -95,7 +96,7 @@ export default function BookRoomDialog({ room }: { room: IRoom }) {
     },
     onSuccess: () => {
       toast.success("Room booked successfully!");
-      queryClient.invalidateQueries({ queryKey: ["rooms"] });
+      invalidate();
       resetForm();
       setOpen(false);
     },

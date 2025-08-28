@@ -71,13 +71,11 @@ export default function RoomCard({
             {/* <div className="text-xs mt-1">Status: {guestStatus}</div> */}
             <div className="text-xs mt-1">
               Arrival:{" "}
-              {arrival ? new Date(arrival).toLocaleDateString("en-GB") : "N/A"}
+              {arrival ? new Date(arrival).toLocaleDateString() : "N/A"}
             </div>
             <div className="text-xs mt-1">
               Departure:{" "}
-              {departure
-                ? new Date(departure).toLocaleDateString("en-GB")
-                : "N/A"}
+              {departure ? new Date(departure).toLocaleDateString() : "N/A"}
             </div>
           </div>
         )}
