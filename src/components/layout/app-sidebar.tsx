@@ -23,7 +23,7 @@ const navLinks = [
   },
   { label: "All Rooms", href: "/", icon: <Hotel className="h-5 w-5" /> },
   {
-    label: "Calendar",
+    label: "Stay View",
     href: "/calendar",
     icon: <Calendar className="h-5 w-5" />,
   },
