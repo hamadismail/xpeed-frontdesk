@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -10,7 +10,6 @@ import {
   ArrowRight,
   CalendarIcon,
   Check,
-  ChevronsUpDown,
 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { Button } from "@/src/components/ui/button";
@@ -18,7 +17,6 @@ import { Input } from "@/src/components/ui/input";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -29,20 +27,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/src/components/ui/popover";
-import { format } from "date-fns";
+import { addDays, format } from "date-fns";
 import { Calendar } from "@/src/components/ui/calendar";
-import { Textarea } from "@/src/components/ui/textarea";
 import ReservationInvoive from "@/src/components/layout/ReservationInvoive";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { IRoom, RoomStatus } from "@/src/models/room.model";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "@/src/components/ui/command";
+import { IRoom, RoomType } from "@/src/models/room.model";
 import {
   Select,
   SelectContent,
@@ -50,25 +40,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
-import { OTAS } from "@/src/models/book.model";
+import { OTAS, GUEST_STATUS, IBook } from "@/src/models/book.model";
 import { IReservation } from "@/src/types";
+import LoadingSpiner from "@/src/utils/LoadingSpiner";
 
 const formSchema = z.object({
   // Guest Info
   reservationNo: z.string().optional(),
   ota: z.string().optional(),
-  name: z.string().min(1, "Plese Enter the guest full name."),
+  name: z.string().min(1, "Please enter the guest full name."),
   phone: z.string().min(1, "Please type guest phone number"),
   email: z.string().optional(),
   passport: z.string().optional(),
-  ic: z.string().optional(),
   nationality: z.string().optional(),
 
   // Booking Info
+  roomType: z.nativeEnum(RoomType).nullable(),
   roomNo: z.string().min(1, "Room no. is required"),
   numOfGuest: z.string().optional(),
-  arrivalDate: z.date().min(new Date(), "Arrival date is required"),
-  departureDate: z.date().min(new Date(), "Departure date is required"),
+  arrivalDate: z.date(),
+  departureDate: z.date(),
   roomDetails: z.string().optional(),
   otherGuest: z.string().optional(),
 
@@ -77,56 +68,108 @@ const formSchema = z.object({
   sst: z.string().optional(),
   tourismTax: z.string().optional(),
   discount: z.string().optional(),
-  pricingPolicy: z.string().optional(),
-  netPriceInWord: z.string().optional(),
-  paymentStatus: z.string().optional(),
 });
-
-const fetchRooms = async (query: string) => {
-  const res = await axios.get(`/api/rooms`, {
-    params: { search: query }, // automatically builds ?search=value
-  });
-  return res.data;
-};
-
-const fetchReservedGuests = async (reserveQuery: string) => {
-  const res = await axios.get(`/api/reserve`, {
-    params: { search: reserveQuery }, // automatically builds ?search=value
-  });
-  return res.data;
-};
 
 export default function Reservation() {
   const [step, setStep] = useState(1);
-  const [query, setQuery] = useState("");
-  const [reserveQuery, setReserveQuery] = useState("");
-  const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
 
-  const { data: rooms, isLoading } = useQuery<IRoom[]>({
-    queryKey: ["rooms", query],
-    queryFn: () => fetchRooms(query),
-    enabled: query.length > 0, // only fetch if query is not empty
-    initialData: [],
+  const { data: allRooms = [], isLoading: roomsLoading } = useQuery<IRoom[]>({
+    queryKey: ["rooms"],
+    queryFn: () => axios.get("/api/rooms").then((res) => res.data),
   });
 
-  const { data: reservedGuests } = useQuery<IReservation[]>({
-    queryKey: ["reserve", reserveQuery],
-    queryFn: () => fetchReservedGuests(reserveQuery),
-    enabled: reserveQuery.length > 0, // only fetch if query is not empty
-    initialData: [],
+  const { data: allBookings = [], isLoading: bookingsLoading } = useQuery<
+    IBook[]
+  >({
+    queryKey: ["book"],
+    queryFn: () => axios.get("/api/book").then((res) => res.data),
   });
 
-  const allAvailableRooms = rooms.filter(
-    (room) =>
-      room.roomStatus === RoomStatus.AVAILABLE ||
-      room.roomStatus === RoomStatus.RESERVED
-  );
+  const { data: allReservations = [], isLoading: reservationsLoading } =
+    useQuery<IReservation[]>({
+      queryKey: ["reserve"],
+      queryFn: () => axios.get("/api/reserve").then((res) => res.data),
+    });
 
-  const availableRooms = allAvailableRooms.slice(0, 6);
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      reservationNo: "",
+      ota: "",
+      name: "",
+      phone: "",
+      email: "",
+      passport: "",
+      nationality: "",
+      roomType: null,
+      roomNo: "",
+      numOfGuest: "",
+      arrivalDate: new Date(),
+      departureDate: addDays(new Date(), 1),
+      roomDetails: "",
+      otherGuest: "",
+      bookingFee: "0",
+      sst: "",
+      tourismTax: "",
+      discount: "",
+    },
+  });
 
-  const reserveArrival = reservedGuests[0]?.room?.arrival;
-  const reserveDeparture = reservedGuests[0]?.room?.departure;
+  const arrivalDate = form.watch("arrivalDate");
+  const departureDate = form.watch("departureDate");
+  const selectedRoomType = form.watch("roomType");
+
+  const availableRooms = useMemo(() => {
+    if (!arrivalDate || !departureDate || !allRooms.length) return [];
+
+    const selectedInterval = { start: arrivalDate, end: departureDate };
+
+    return allRooms.filter((room) => {
+      // Check for an overlapping booking (checked-in guest)
+      const isOccupied = allBookings.some((booking) => {
+        const bookingStart = new Date(booking.stay.arrival);
+        const bookingEnd = new Date(booking.stay.departure);
+        // Ensure roomId is comparable
+        const bookingRoomId =
+          typeof booking.roomId === 'object' && booking.roomId !== null && '_id' in booking.roomId
+            ? ((booking.roomId as unknown) as { _id: string })._id.toString()
+            : booking.roomId?.toString();
+
+
+        return (
+          bookingRoomId === room._id?.toString() &&
+          booking.guest.status === GUEST_STATUS.CHECKED_IN &&
+          selectedInterval.start < bookingEnd &&
+          selectedInterval.end > bookingStart
+        );
+      });
+
+      // Check for an overlapping reservation
+      const isReserved = allReservations.some((reservation) => {
+        const reservationStart = new Date(reservation.room.arrival);
+        const reservationEnd = new Date(reservation.room.departure);
+        return (
+          reservation.room.roomNo === room.roomNo &&
+          selectedInterval.start <= reservationEnd &&
+          selectedInterval.end >= reservationStart
+        );
+      });
+
+      return !isOccupied && !isReserved;
+    });
+  }, [arrivalDate, departureDate, allRooms, allBookings, allReservations]);
+
+  const availableRoomsByType = useMemo(() => {
+    const roomsByType: Record<string, IRoom[]> = {};
+    availableRooms.forEach((room) => {
+      if (!roomsByType[room.roomType]) {
+        roomsByType[room.roomType] = [];
+      }
+      roomsByType[room.roomType].push(room);
+    });
+    return roomsByType;
+  }, [availableRooms]);
 
   const { mutate: reserveRoom, isPending } = useMutation({
     mutationFn: async (data: z.infer<typeof formSchema>) => {
@@ -153,9 +196,6 @@ export default function Reservation() {
           sst: data.sst,
           tourismTax: data.tourismTax,
           fnfDiscount: data.discount,
-          pricingPolicy: data.pricingPolicy,
-          netPriceInWord: data.netPriceInWord,
-          paymentStatus: data.paymentStatus,
         },
         reservationDate: new Date().toISOString(),
       };
@@ -163,59 +203,14 @@ export default function Reservation() {
 
       if (res?.data?.success) {
         toast.success("Room reserved successfully!");
-        queryClient.invalidateQueries({ queryKey: ["reserve"] });
-      } else if (res?.status === 409) {
-        // Conflict error - room already reserved/booked for selected dates
-        toast.error("Reservation failed", {
-          description:
-            res?.data?.message || "Room not available for selected dates",
-        });
+        queryClient.invalidateQueries({ queryKey: ["reserve", "rooms"] });
+        setStep(1);
+        form.reset();
       } else {
         toast.error("Reservation failed", {
           description: res?.data?.message || "Something went wrong",
         });
       }
-    },
-    // onSuccess: () => {
-    //   toast.success("Room reserved successfully!");
-    //   queryClient.invalidateQueries({ queryKey: ["reserve"] });
-    // },
-    // onError: (error) => {
-    //   toast.error("Booking failed", {
-    //     description: error?.message || "Something went wrong",
-    //   });
-    // },
-  });
-
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      // Guest Info
-      reservationNo: "",
-      ota: "",
-      name: "",
-      phone: "",
-      email: "",
-      passport: "",
-      ic: "",
-      nationality: "",
-
-      // Booking Info
-      roomNo: "",
-      numOfGuest: "",
-      arrivalDate: reserveDeparture,
-      departureDate: reserveDeparture,
-      roomDetails: "",
-      otherGuest: "",
-
-      // Payment Info
-      bookingFee: "",
-      sst: "",
-      tourismTax: "",
-      discount: "",
-      pricingPolicy: "",
-      netPriceInWord: "",
-      paymentStatus: "",
     },
   });
 
@@ -223,26 +218,19 @@ export default function Reservation() {
     reserveRoom(data);
   };
 
-  const { trigger } = form;
   const handleNext = async () => {
     let fieldsToValidate: (keyof z.infer<typeof formSchema>)[] = [];
 
-    if (step === 1) {
-      fieldsToValidate = ["name", "phone"];
-    } else if (step === 2) {
-      fieldsToValidate = ["roomNo", "arrivalDate", "departureDate"];
-    } else if (step === 3) {
-      fieldsToValidate = ["bookingFee"];
-    }
+    if (step === 1) fieldsToValidate = ["name", "phone"];
+    else if (step === 2)
+      fieldsToValidate = ["arrivalDate", "departureDate", "roomType", "roomNo"];
+    else if (step === 3) fieldsToValidate = ["bookingFee"];
 
-    // Trigger Zod validation for the current step
-    const isStepValid = await trigger(fieldsToValidate);
-
+    const isStepValid = await form.trigger(fieldsToValidate);
     if (!isStepValid) {
-      toast.error("Missing Required Fiels");
+      toast.error("Please fill all required fields correctly.");
       return;
-    } // Stop if validation failed
-
+    }
     setStep(step + 1);
   };
 
@@ -250,11 +238,15 @@ export default function Reservation() {
     if (step > 1) setStep(step - 1);
   };
 
+  if (roomsLoading || bookingsLoading || reservationsLoading) {
+    return <LoadingSpiner />;
+  }
+
   return (
     <div>
       <div className="w-full max-w-4xl px-4 mx-auto">
         <div className="text-center text-xl font-bold mt-4 mb-8">
-          Reserbe The Room
+          Reserve The Room
         </div>
 
         {/* Progress Steps */}
@@ -286,11 +278,9 @@ export default function Reservation() {
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            {/* Step 1: Guest Information */}
             {step === 1 && (
               <div className="grid gap-4">
                 <div className="grid sm:grid-cols-3 gap-4">
-                  {/* Guest Reservation No. */}
                   <FormField
                     control={form.control}
                     name="reservationNo"
@@ -298,48 +288,39 @@ export default function Reservation() {
                       <FormItem>
                         <FormLabel>Reservation No.</FormLabel>
                         <FormControl>
-                          <Input
-                            type="text"
-                            placeholder="Type guest reservation no."
-                            {...field}
-                            className="bg-white"
-                          />
+                          <Input placeholder="Optional" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-
-                  {/* OTAs */}
                   <FormField
                     control={form.control}
                     name="ota"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>OTA</FormLabel>
-                        <FormControl>
-                          <Select
-                            value={field.value}
-                            onValueChange={field.onChange}
-                          >
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
                             <SelectTrigger className="w-full">
                               <SelectValue placeholder="Select OTA/Reference" />
                             </SelectTrigger>
-                            <SelectContent>
-                              {Object.values(OTAS).map((ota) => (
-                                <SelectItem key={ota} value={ota}>
-                                  {ota}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </FormControl>
+                          </FormControl>
+                          <SelectContent>
+                            {Object.values(OTAS).map((ota) => (
+                              <SelectItem key={ota} value={ota}>
+                                {ota}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-
-                  {/* Guest Full Name */}
                   <FormField
                     control={form.control}
                     name="name"
@@ -347,19 +328,12 @@ export default function Reservation() {
                       <FormItem>
                         <FormLabel>Full Name*</FormLabel>
                         <FormControl>
-                          <Input
-                            type="text"
-                            placeholder="Type guest full name"
-                            {...field}
-                            className="bg-white"
-                          />
+                          <Input placeholder="Guest full name" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-
-                  {/* Guest Full Name */}
                   <FormField
                     control={form.control}
                     name="phone"
@@ -367,19 +341,12 @@ export default function Reservation() {
                       <FormItem>
                         <FormLabel>Phone*</FormLabel>
                         <FormControl>
-                          <Input
-                            type="text"
-                            placeholder="Type guest phone number"
-                            {...field}
-                            className="bg-white"
-                          />
+                          <Input placeholder="Guest phone number" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-
-                  {/* Guest Email  */}
                   <FormField
                     control={form.control}
                     name="email"
@@ -387,19 +354,12 @@ export default function Reservation() {
                       <FormItem>
                         <FormLabel>Email</FormLabel>
                         <FormControl>
-                          <Input
-                            type="text"
-                            placeholder="Type guest phone number"
-                            {...field}
-                            className="bg-white"
-                          />
+                          <Input placeholder="guest@example.com" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-
-                  {/* Guest Passport  */}
                   <FormField
                     control={form.control}
                     name="passport"
@@ -408,18 +368,14 @@ export default function Reservation() {
                         <FormLabel>IC/Passport</FormLabel>
                         <FormControl>
                           <Input
-                            type="text"
-                            placeholder="Type guest phone number"
+                            placeholder="IC or Passport number"
                             {...field}
-                            className="bg-white"
                           />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-
-                  {/* Guest Nationality  */}
                   <FormField
                     control={form.control}
                     name="nationality"
@@ -427,19 +383,13 @@ export default function Reservation() {
                       <FormItem>
                         <FormLabel>Nationality</FormLabel>
                         <FormControl>
-                          <Input
-                            type="text"
-                            placeholder="Type guest phone number"
-                            {...field}
-                            className="bg-white"
-                          />
+                          <Input placeholder="Guest nationality" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                 </div>
-
                 <div className="flex justify-end gap-2 mt-4">
                   <Button type="button" onClick={handleNext} className="gap-1">
                     Next <ArrowRight className="h-4 w-4" />
@@ -448,235 +398,135 @@ export default function Reservation() {
               </div>
             )}
 
-            {/* Step 2: Booking Information */}
             {step === 2 && (
-              <div className="grid gap-4">
-                <div className="grid sm:grid-cols-3 gap-4">
-                  {/* Room No. */}
+              <div className="space-y-6">
+                <FormField
+                  control={form.control}
+                  name="arrivalDate" // Control both dates with one component
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Stay Duration</FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant={"outline"}
+                              className={cn(
+                                "pl-3 text-left font-normal",
+                                !field.value && "text-muted-foreground"
+                              )}
+                            >
+                              {arrivalDate && departureDate ? (
+                                <>
+                                  {format(arrivalDate, "LLL dd, yyyy")} -{" "}
+                                  {format(departureDate, "LLL dd, yyyy")}
+                                </>
+                              ) : (
+                                <span>Select your stay dates</span>
+                              )}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="range"
+                            defaultMonth={arrivalDate}
+                            selected={{
+                              from: arrivalDate,
+                              to: departureDate,
+                            }}
+                            onSelect={(range) => {
+                              form.setValue("arrivalDate", range?.from as Date);
+                              form.setValue("departureDate", range?.to as Date);
+                            }}
+                            disabled={(date) => {
+                              const today = new Date();
+                              today.setHours(0, 0, 0, 0);
+                              return date < today;
+                            }}
+                            numberOfMonths={2}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="space-y-4">
+                  <h3 className="text-md font-medium">
+                    Available Room Categories
+                  </h3>
                   <FormField
                     control={form.control}
-                    name="roomNo"
+                    name="roomType"
                     render={({ field }) => (
-                      <FormItem className="flex flex-col">
-                        <FormLabel>Room No.</FormLabel>
-                        <Popover open={open} onOpenChange={setOpen}>
-                          <PopoverTrigger asChild>
-                            <FormControl>
+                      <FormItem className="space-y-3">
+                        <FormControl>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            {Object.keys(availableRoomsByType).map((type) => (
                               <Button
-                                variant="outline"
-                                role="combobox"
-                                className={cn(
-                                  "w-full justify-between",
-                                  !field.value && "text-muted-foreground"
-                                )}
+                                key={type}
+                                variant={
+                                  field.value === type ? "default" : "outline"
+                                }
+                                onClick={() => field.onChange(type as RoomType)}
+                                className="h-auto py-3 flex flex-col"
                               >
-                                {field.value
-                                  ? availableRooms?.find(
-                                      (room) => room.roomNo === field.value
-                                    )?.roomNo || field.value
-                                  : "Select room"}
-                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                <span>{type}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  ({availableRoomsByType[type].length}{" "}
+                                  available)
+                                </span>
                               </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-[250px] p-0">
-                            <Command>
-                              <CommandInput
-                                placeholder="Search room..."
-                                value={query}
-                                onValueChange={(val) => {
-                                  setQuery(val);
-                                  setReserveQuery(val);
-                                }}
-                              />
-                              <CommandEmpty>
-                                {isLoading ? "Loading..." : "No room found"}
-                              </CommandEmpty>
-                              <CommandGroup>
-                                {availableRooms?.map((room) => (
-                                  <CommandItem
-                                    value={room.roomNo}
-                                    key={room._id?.toString()}
-                                    onSelect={() => {
-                                      form.setValue("roomNo", room.roomNo);
-                                      setOpen(false);
-                                      setQuery("");
-                                      // setReserveQuery("");
-                                    }}
-                                  >
-                                    <Check
-                                      className={cn(
-                                        "mr-2 h-4 w-4",
-                                        room.roomNo === field.value
-                                          ? "opacity-100"
-                                          : "opacity-0"
-                                      )}
-                                    />
-                                    {room.roomNo} - {room.roomType}
-                                  </CommandItem>
-                                ))}
-                              </CommandGroup>
-                            </Command>
-                          </PopoverContent>
-                        </Popover>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Number of Guests. */}
-                  <FormField
-                    control={form.control}
-                    name="numOfGuest"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Number of Guests</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="text"
-                            placeholder="Type number of guests."
-                            {...field}
-                            className="bg-white"
-                          />
+                            ))}
+                          </div>
                         </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Stay Date */}
-                  <FormField
-                    control={form.control}
-                    name="departureDate"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-col">
-                        <FormLabel>Stay Date *</FormLabel>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button
-                                variant={"outline"}
-                                className={cn(
-                                  "flex justify-start pl-3 text-left font-normal",
-                                  !field.value && "text-muted-foreground"
-                                )}
-                              >
-                                <CalendarIcon className="h-4 w-4 opacity-50" />
-                                {form.watch("arrivalDate") &&
-                                form.watch("departureDate") ? (
-                                  `${format(
-                                    form.getValues("arrivalDate"),
-                                    "MMM dd"
-                                  )} - ${format(
-                                    form.getValues("departureDate"),
-                                    "MMM dd, yyyy"
-                                  )}`
-                                ) : form.getValues("arrivalDate") ? (
-                                  `${format(
-                                    form.getValues("departureDate"),
-                                    "PPP"
-                                  )} - Select departure`
-                                ) : (
-                                  <span>
-                                    Select stay date
-                                  </span>
-                                )}
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent
-                            className="w-auto p-0 max-h-[280px] overflow-y-auto"
-                            align="start"
-                          >
-                            <Calendar
-                              mode="range"
-                              selected={{
-                                from: form.watch("arrivalDate"),
-                                to: form.watch("departureDate"),
-                              }}
-                              onSelect={(range) => {
-                                form.setValue(
-                                  "arrivalDate",
-                                  range?.from || new Date()
-                                );
-                                form.setValue(
-                                  "departureDate",
-                                  range?.to || new Date()
-                                );
-                              }}
-                              // captionLayout="dropdown"
-                              disabled={[
-                                {
-                                  before:
-                                    form.watch("arrivalDate") ||
-                                    new Date(
-                                      new Date().setDate(
-                                        new Date().getDate() + 1
-                                      )
-                                    ),
-                                },
-                                {
-                                  from: reserveArrival,
-                                  to: reserveDeparture,
-                                },
-                              ]}
-                            />
-                          </PopoverContent>
-                        </Popover>
-                        <FormDescription className="sr-only">
-                          Your date is used.
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Room Details */}
-                  <FormField
-                    control={form.control}
-                    name="roomDetails"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Room Details</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Your room details"
-                            className="resize-none"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormDescription className="sr-only">
-                          You can <span>@mention</span> other users and
-                          organizations.
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Other Guests */}
-                  <FormField
-                    control={form.control}
-                    name="otherGuest"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Other Guests</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Your guests info"
-                            className="resize-none"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormDescription className="sr-only">
-                          You can <span>@mention</span> other users and
-                          organizations.
-                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                 </div>
+
+                {selectedRoomType && (
+                  <div className="space-y-4">
+                    <h3 className="text-md font-medium">
+                      Select an Available Room
+                    </h3>
+                    <FormField
+                      control={form.control}
+                      name="roomNo"
+                      render={({ field }) => (
+                        <FormItem>
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select a room number" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {availableRoomsByType[selectedRoomType]?.map(
+                                (room) => (
+                                  <SelectItem
+                                    key={room._id?.toString()}
+                                    value={room.roomNo}
+                                  >
+                                    {room.roomNo}
+                                  </SelectItem>
+                                )
+                              )}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                )}
 
                 <div className="flex justify-end gap-2 mt-4">
                   <Button
@@ -694,151 +544,62 @@ export default function Reservation() {
               </div>
             )}
 
-            {/* Step 3: Payment Information */}
             {step === 3 && (
               <div className="grid gap-4">
                 <div className="grid sm:grid-cols-3 gap-4">
-                  {/* Booking Fee */}
                   <FormField
                     control={form.control}
                     name="bookingFee"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Booking Fees</FormLabel>
+                        <FormLabel>Booking Fee</FormLabel>
                         <FormControl>
-                          <Input
-                            type="number"
-                            placeholder="Type booking fee."
-                            {...field}
-                            className="bg-white"
-                          />
+                          <Input type="number" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-
-                  {/* SST */}
                   <FormField
                     control={form.control}
                     name="sst"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>SST (8%)</FormLabel>
+                        <FormLabel>SST (optional)</FormLabel>
                         <FormControl>
-                          <Input
-                            type="number"
-                            placeholder="Type sst fee."
-                            {...field}
-                            className="bg-white"
-                          />
+                          <Input type="number" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-
-                  {/* Tourism Tax */}
                   <FormField
                     control={form.control}
                     name="tourismTax"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Tourism Tax</FormLabel>
+                        <FormLabel>Tourism Tax (optional)</FormLabel>
                         <FormControl>
-                          <Input
-                            type="number"
-                            placeholder="Type tourism tax"
-                            {...field}
-                            className="bg-white"
-                          />
+                          <Input type="number" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-
-                  {/* FnF Discount */}
                   <FormField
                     control={form.control}
                     name="discount"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>FnF Discount</FormLabel>
+                        <FormLabel>Discount (optional)</FormLabel>
                         <FormControl>
-                          <Input
-                            type="number"
-                            placeholder="Enter discount amount"
-                            {...field}
-                            className="bg-white"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Net Price in Words */}
-                  <FormField
-                    control={form.control}
-                    name="netPriceInWord"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Net Price In Words</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="text"
-                            placeholder="Enter net price in word"
-                            {...field}
-                            className="bg-white"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Payment Status */}
-                  <FormField
-                    control={form.control}
-                    name="paymentStatus"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Payment Status</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="text"
-                            placeholder="Type Payment Status"
-                            {...field}
-                            className="bg-white"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Payment Status */}
-                  <FormField
-                    control={form.control}
-                    name="pricingPolicy"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Pricing Policy</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="text"
-                            placeholder="Type Pricing Policy"
-                            {...field}
-                            className="bg-white"
-                          />
+                          <Input type="number" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                 </div>
-
                 <div className="flex justify-end gap-2 mt-4">
                   <Button
                     type="button"
@@ -855,7 +616,6 @@ export default function Reservation() {
               </div>
             )}
 
-            {/* Step 4: Confirmation */}
             {step === 4 && (
               <div className="grid gap-6 overflow-auto max-h-80">
                 <ReservationInvoive
@@ -864,23 +624,21 @@ export default function Reservation() {
                       reservationNo: form.getValues("reservationNo") ?? "",
                       ota: form.getValues("ota") ?? "",
                       name: form.getValues("name"),
-                      email: form.getValues("email"),
+                      email: form.getValues("email") ?? "",
                       phone: form.getValues("phone"),
-                      nationality: form.getValues("nationality"),
-                      passport: form.getValues("passport"),
+                      nationality: form.getValues("nationality") ?? "",
+                      passport: form.getValues("passport") ?? "",
                     },
                     room: {
                       roomNo: form.getValues("roomNo"),
-                      numOfGuest: form.getValues("numOfGuest"),
-                      arrival: form.getValues("arrivalDate") || new Date(),
-                      departure: form.getValues("departureDate") || new Date(),
-                      roomDetails: form.getValues("roomDetails"),
-                      otherGuest: form.getValues("otherGuest"),
+                      numOfGuest: form.getValues("numOfGuest") ?? "",
+                      arrival: form.getValues("arrivalDate"),
+                      departure: form.getValues("departureDate"),
+                      roomDetails: form.getValues("roomDetails") ?? "",
+                      otherGuest: form.getValues("otherGuest") ?? "",
                     },
                     payment: {
-                      bookingFee: parseFloat(
-                        form.getValues("bookingFee") || "0"
-                      ),
+                      bookingFee: parseFloat(form.getValues("bookingFee")),
                       sst: parseFloat(form.getValues("sst") || "0"),
                       tourismTax: parseFloat(
                         form.getValues("tourismTax") || "0"
@@ -888,23 +646,11 @@ export default function Reservation() {
                       fnfDiscount: parseFloat(
                         form.getValues("discount") || "0"
                       ),
-                      totalAmount: (() => {
-                        const bookingFee = parseFloat(
-                          form.getValues("bookingFee") || "0"
-                        );
-                        const sst = parseFloat(form.getValues("sst") || "0");
-                        const tourismTax = parseFloat(
-                          form.getValues("tourismTax") || "0"
-                        );
-                        const discount = parseFloat(
-                          form.getValues("discount") || "0"
-                        );
-
-                        // Calculate SST as percentage of booking fee
-                        const sstAmount = (bookingFee * sst) / 100;
-
-                        return bookingFee + sstAmount + tourismTax - discount;
-                      })(),
+                      totalAmount:
+                        parseFloat(form.getValues("bookingFee")) +
+                        parseFloat(form.getValues("sst") || "0") +
+                        parseFloat(form.getValues("tourismTax") || "0") -
+                        parseFloat(form.getValues("discount") || "0"),
                     },
                     reservationDate: new Date().toLocaleString(),
                   }}
