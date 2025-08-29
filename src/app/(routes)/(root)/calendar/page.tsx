@@ -1,685 +1,288 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import axios, { AxiosError } from "axios";
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
 import {
   format,
-  startOfMonth,
-  endOfMonth,
+  addDays,
+  subDays,
   eachDayOfInterval,
-  isToday,
-  isSameMonth,
-  addMonths,
-  subMonths,
+  isWithinInterval,
+  differenceInDays,
   startOfWeek,
-  endOfWeek,
-  // isSameDay,
-  // parseISO,
+  max,
+  min,
 } from "date-fns";
 import {
   ChevronLeft,
   ChevronRight,
-  Calendar,
-  // Plus,
-  Hotel,
-  Clock,
-  User,
-  CheckCircle,
+  BedDouble,
+  CalendarDays,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/src/components/ui/card";
-import { Badge } from "@/src/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  // DialogTrigger,
-} from "@/src/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/src/components/ui/select";
-import { Input } from "@/src/components/ui/input";
-import { Label } from "@/src/components/ui/label";
-import { Textarea } from "@/src/components/ui/textarea";
-import { toast } from "sonner";
-import { IRoom, RoomStatus } from "@/src/models/room.model";
-import { IQuickBooking, IReservation } from "@/src/types";
-import { OTAS, GUEST_STATUS } from "@/src/models/book.model";
+import { IBook, GUEST_STATUS } from "@/src/models/book.model";
+import { IReservation } from "@/src/types";
+import { IRoom } from "@/src/models/room.model";
+import LoadingSpiner from "@/src/utils/LoadingSpiner";
+import { cn } from "@/src/lib/utils";
 
-interface CalendarBooking {
-  _id: string;
-  guest: {
-    name: string;
-    phone: string;
-    status?: GUEST_STATUS | "Due Out";
-  };
-  stay?: {
-    arrival: Date;
-    departure: Date;
-  };
-  room?: {
-    arrival: Date;
-    departure: Date;
-    roomNo?: string;
-  };
-  roomId?: string;
-  roomNo?: string;
-}
+const VIEW_DAYS = 14; // Show 14 days at a time
 
-export default function CalendarPage() {
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false);
-  const [bookingType, setBookingType] = useState<"reservation" | "booking">(
-    "reservation"
-  );
+export default function StayViewPage() {
+  const [startDate, setStartDate] = useState(startOfWeek(new Date()));
 
-  const queryClient = useQueryClient();
-
-  // Fetch all rooms
-  const { data: rooms = [] } = useQuery<IRoom[]>({
+  const { data: allRooms = [], isLoading: roomsLoading } = useQuery<IRoom[]>({
     queryKey: ["rooms"],
     queryFn: () => axios.get("/api/rooms").then((res) => res.data),
   });
 
-  // Fetch all reservations
-  const { data: reservations = [] } = useQuery<IReservation[]>({
-    queryKey: ["reservations"],
-    queryFn: () => axios.get("/api/reserve").then((res) => res.data),
-  });
-
-  // Fetch all bookings
-  const { data: bookings = [] } = useQuery<CalendarBooking[]>({
-    queryKey: ["bookings"],
+  const { data: allBookings = [], isLoading: bookingsLoading } = useQuery<
+    IBook[]
+  >({
+    queryKey: ["book"],
     queryFn: () => axios.get("/api/book").then((res) => res.data),
   });
 
-  // Calendar logic
-  const monthStart = startOfMonth(currentDate);
-  const monthEnd = endOfMonth(currentDate);
-  const calendarStart = startOfWeek(monthStart);
-  const calendarEnd = endOfWeek(monthEnd);
-  const calendarDays = eachDayOfInterval({
-    start: calendarStart,
-    end: calendarEnd,
-  });
-
-  // Process bookings for calendar display
-  const processedBookings = useMemo(() => {
-    const bookingMap: { [key: string]: CalendarBooking[] } = {};
-
-    // Process reservations
-    reservations.forEach((reservation) => {
-      if (reservation.room?.arrival && reservation.room?.departure) {
-        const arrival = new Date(reservation.room.arrival);
-        const departure = new Date(reservation.room.departure);
-
-        const currentDay = new Date(arrival);
-        while (currentDay <= departure) {
-          const dayKey = format(currentDay, "yyyy-MM-dd");
-          if (!bookingMap[dayKey]) bookingMap[dayKey] = [];
-
-          bookingMap[dayKey].push({
-            _id: reservation._id || `res-${Math.random()}`,
-            guest: {
-              name: reservation.guest.name,
-              phone: reservation.guest.phone,
-              status: GUEST_STATUS.RESERVED,
-            },
-            room: {
-              arrival,
-              departure,
-              roomNo: reservation.room.roomNo,
-            },
-            roomNo: reservation.room.roomNo,
-          });
-
-          currentDay.setDate(currentDay.getDate() + 1);
-        }
-      }
+  const { data: allReservations = [], isLoading: reservationsLoading } =
+    useQuery<IReservation[]>({
+      queryKey: ["reserve"],
+      queryFn: () => axios.get("/api/reserve").then((res) => res.data),
     });
 
-    // Process bookings
-    bookings.forEach((booking) => {
-      if (booking.stay?.arrival && booking.stay?.departure) {
-        const arrival = new Date(booking.stay.arrival);
-        const departure = new Date(booking.stay.departure);
+  const endDate = addDays(startDate, VIEW_DAYS - 1);
+  const dateRange = eachDayOfInterval({ start: startDate, end: endDate });
 
-        const currentDay = new Date(arrival);
-        while (currentDay <= departure) {
-          const dayKey = format(currentDay, "yyyy-MM-dd");
-          if (!bookingMap[dayKey]) bookingMap[dayKey] = [];
+  const handleNext = () => setStartDate(addDays(startDate, VIEW_DAYS));
+  const handlePrev = () => setStartDate(subDays(startDate, VIEW_DAYS));
+  const handleToday = () => setStartDate(startOfWeek(new Date()));
 
-          // Find room number from rooms array
-          const room = rooms.find((r) => r._id?.toString() === booking.roomId);
+  const sortedRooms = useMemo(() => {
+    return [...allRooms].sort((a, b) => a.roomNo.localeCompare(b.roomNo));
+  }, [allRooms]);
 
-          // Check if this is a due out booking (departure date)
-          const isDueOut =
-            currentDay.toDateString() === departure.toDateString();
-          const guestStatus = isDueOut ? "Due Out" : booking.guest.status;
+  const getBookingStatus = (booking: IBook) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const departureDate = new Date(booking.stay.departure);
+    departureDate.setHours(0, 0, 0, 0);
 
-          bookingMap[dayKey].push({
-            _id: booking._id,
-            guest: {
-              name: booking.guest.name,
-              phone: booking.guest.phone,
-              status: guestStatus,
-            },
-            stay: {
-              arrival,
-              departure,
-            },
-            roomId: booking.roomId,
-            roomNo: room?.roomNo || "Unknown",
-          });
-
-          currentDay.setDate(currentDay.getDate() + 1);
-        }
-      }
-    });
-
-    return bookingMap;
-  }, [reservations, bookings, rooms]);
-
-  // Quick booking form state
-  const [quickBookingForm, setQuickBookingForm] = useState({
-    guestName: "",
-    guestPhone: "",
-    roomId: "",
-    arrival: "",
-    departure: "",
-    adults: 1,
-    ota: OTAS.WALKING_GUEST,
-    notes: "",
-  });
-
-  // Quick booking mutation
-  const quickBookingMutation = useMutation({
-    mutationFn: async (bookingData: IQuickBooking) => {
-      if (bookingType === "reservation") {
-        const payload = {
-          guest: {
-            name: bookingData.guestName,
-            phone: bookingData.guestPhone,
-            ota: bookingData.ota,
-            status: GUEST_STATUS.RESERVED,
-          },
-          room: {
-            roomNo: rooms.find((r) => r._id?.toString() === bookingData.roomId)
-              ?.roomNo,
-            arrival: new Date(bookingData.arrival),
-            departure: new Date(bookingData.departure),
-            roomDetails: bookingData.notes,
-          },
-          payment: {
-            bookingFee: 0,
-            sst: 0,
-            tourismTax: 0,
-            fnfDiscount: 0,
-          },
-          reservationDate: new Date().toISOString(),
-        };
-        return axios.post("/api/reserve", { payload });
-      } else {
-        const bookingInfo = {
-          guest: {
-            name: bookingData.guestName,
-            phone: bookingData.guestPhone,
-            refId: `WG-${Date.now()}`,
-            otas: bookingData.ota,
-            status: GUEST_STATUS.CHECKED_IN,
-          },
-          stay: {
-            arrival: new Date(bookingData.arrival),
-            departure: new Date(bookingData.departure),
-            adults: bookingData.adults,
-            children: 0,
-          },
-          payment: {
-            roomPrice: 100,
-            subtotal: 100,
-            paidAmount: 0,
-            dueAmount: 100,
-            paymentMethod: "Cash",
-            remarks: bookingData.notes || "Quick booking from calendar",
-          },
-          roomId: bookingData.roomId,
-        };
-        return axios.post("/api/book", { bookingInfo });
-      }
-    },
-    onSuccess: () => {
-      toast.success(
-        `${
-          bookingType === "reservation" ? "Reservation" : "Booking"
-        } created successfully!`
-      );
-      queryClient.invalidateQueries({ queryKey: ["reservations"] });
-      queryClient.invalidateQueries({ queryKey: ["bookings"] });
-      queryClient.invalidateQueries({ queryKey: ["rooms"] });
-      setIsBookingDialogOpen(false);
-      setQuickBookingForm({
-        guestName: "",
-        guestPhone: "",
-        roomId: "",
-        arrival: "",
-        departure: "",
-        adults: 1,
-        ota: OTAS.WALKING_GUEST,
-        notes: "",
-      });
-    },
-    onError: (error: AxiosError<{ message: string }>) => {
-      toast.error("Failed to create booking", {
-        description: error.response?.data?.message || "Something went wrong",
-      });
-    },
-  });
-
-  const handleDateClick = (date: Date) => {
-    setSelectedDate(date);
-    setQuickBookingForm((prev) => ({
-      ...prev,
-      arrival: format(date, "yyyy-MM-dd"),
-      departure: format(
-        new Date(date.getTime() + 24 * 60 * 60 * 1000),
-        "yyyy-MM-dd"
-      ),
-    }));
-    setIsBookingDialogOpen(true);
+    if (departureDate.getTime() === today.getTime()) {
+      return GUEST_STATUS.CHECKED_OUT; // Or a specific "Due Out" status if you prefer
+    }
+    return booking.guest.status;
   };
 
-  const availableRooms = rooms.filter(
-    (room) =>
-      room.roomStatus !== RoomStatus.OCCUPIED &&
-      room.roomStatus !== RoomStatus.DUE_OUT
-  );
-
-  const occupaidRooms = rooms.filter(
-    (room) =>
-      room.roomStatus === RoomStatus.OCCUPIED ||
-      room.roomStatus === RoomStatus.DUE_OUT
-  );
+  if (roomsLoading || bookingsLoading || reservationsLoading) {
+    return <LoadingSpiner />;
+  }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 bg-gray-50 min-h-screen">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Calendar className="h-8 w-8 text-primary" />
-          <h1 className="text-3xl font-bold">Reservation Calendar</h1>
+      <div className="flex flex-col sm:flex-row items-center justify-between mb-4 bg-white p-4 rounded-lg shadow-sm">
+        <div className="flex items-center gap-3 mb-4 sm:mb-0">
+          <CalendarDays className="h-8 w-8 text-primary" />
+          <h1 className="text-2xl font-bold text-gray-800">Stay View</h1>
         </div>
-
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setCurrentDate(subMonths(currentDate, 1))}
-          >
+          <Button variant="outline" size="icon" onClick={handlePrev}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
-
-          <div className="px-4 py-2 text-lg font-semibold min-w-[200px] text-center">
-            {format(currentDate, "MMMM yyyy")}
-          </div>
-
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setCurrentDate(addMonths(currentDate, 1))}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-
-          <Button onClick={() => setCurrentDate(new Date())} variant="outline">
+          <Button variant="outline" onClick={handleToday}>
             Today
           </Button>
+          <Button variant="outline" size="icon" onClick={handleNext}>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+          <div className="hidden md:block ml-4 font-semibold text-gray-600">
+            {format(startDate, "MMM dd, yyyy")} -{" "}
+            {format(endDate, "MMM dd, yyyy")}
+          </div>
         </div>
       </div>
 
-      {/* Calendar Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Hotel className="h-5 w-5 text-blue-500" />
-              <div>
-                <p className="text-sm text-muted-foreground">Total Rooms</p>
-                <p className="text-2xl font-bold">{rooms.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-500" />
-              <div>
-                <p className="text-sm text-muted-foreground">Available</p>
-                <p className="text-2xl font-bold">{availableRooms.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-orange-500" />
-              <div>
-                <p className="text-sm text-muted-foreground">Reservations</p>
-                <p className="text-2xl font-bold">{reservations.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <User className="h-5 w-5 text-red-500" />
-              <div>
-                <p className="text-sm text-muted-foreground">Occupied</p>
-                <p className="text-2xl font-bold">{occupaidRooms.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Calendar Grid */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Monthly View</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {/* Days of week header */}
-          <div className="grid grid-cols-7 gap-1 mb-4">
-            {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-              <div
-                key={day}
-                className="p-2 text-center font-semibold text-muted-foreground"
-              >
-                {day}
-              </div>
-            ))}
+      {/* Timeline Grid */}
+      <div className="bg-white rounded-lg shadow overflow-x-auto">
+        <div
+          className="inline-grid min-w-full"
+          style={{
+            gridTemplateColumns: `minmax(120px, 1.5fr) repeat(${VIEW_DAYS}, minmax(60px, 1fr))`,
+          }}
+        >
+          {/* Date Header */}
+          <div className="sticky top-0 z-10 bg-gray-100 p-2 border-b border-r border-gray-200 font-semibold text-sm text-gray-600 flex items-center justify-center">
+            Room
           </div>
+          {dateRange.map((date) => (
+            <div
+              key={date.toString()}
+              className="sticky top-0 z-10 bg-gray-100 p-2 border-b border-gray-200 text-center"
+            >
+              <div className="text-xs text-gray-500">{format(date, "E")}</div>
+              <div className="text-lg font-semibold text-gray-700">
+                {format(date, "d")}
+              </div>
+            </div>
+          ))}
 
-          {/* Calendar days */}
-          <div className="grid grid-cols-7 gap-1">
-            {calendarDays.map((day) => {
-              const dayKey = format(day, "yyyy-MM-dd");
-              const dayBookings = processedBookings[dayKey] || [];
-              const isCurrentMonth = isSameMonth(day, currentDate);
-              const isTodayDate = isToday(day);
-
-              return (
-                <div
-                  key={dayKey}
-                  className={`
-                    min-h-[120px] p-2 border border-border rounded-lg cursor-pointer hover:bg-accent/50 transition-colors
-                    ${!isCurrentMonth ? "opacity-50" : ""}
-                    ${isTodayDate ? "bg-primary/10 border-primary" : ""}
-                  `}
-                  onClick={() => handleDateClick(day)}
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <span
-                      className={`text-sm font-medium ${
-                        isTodayDate ? "text-primary" : ""
-                      }`}
-                    >
-                      {format(day, "d")}
-                    </span>
-                    {dayBookings.length > 0 && (
-                      <Badge variant="secondary" className="text-xs px-1 py-0">
-                        {dayBookings.length}
-                      </Badge>
-                    )}
-                  </div>
-
-                  <div className="space-y-1">
-                    {dayBookings.slice(0, 3).map((booking, index) => (
-                      <div
-                        key={`${booking._id}-${index}`}
-                        className={`text-xs p-1 rounded truncate ${
-                          booking.guest.status === GUEST_STATUS.RESERVED
-                            ? "bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400"
-                            : booking.guest.status === GUEST_STATUS.CHECKED_IN
-                            ? "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
-                            : "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400"
-                        }`}
-                        title={`${booking.guest.name} - Room ${booking.roomNo}`}
-                      >
-                        {booking.roomNo}: {booking.guest.name}
-                      </div>
-                    ))}
-                    {dayBookings.length > 3 && (
-                      <div className="text-xs text-muted-foreground">
-                        +{dayBookings.length - 3} more
-                      </div>
-                    )}
-                  </div>
+          {/* Room Rows and Bookings */}
+          {sortedRooms.map((room) => (
+            <React.Fragment key={room._id?.toString()}>
+              {/* Room Info Cell */}
+              <div className="sticky left-0 bg-white p-2 border-r border-b border-gray-200 font-semibold text-sm text-gray-700 flex flex-col justify-center">
+                <div className="flex items-center gap-2">
+                  <BedDouble className="h-4 w-4 text-primary" />
+                  <span>{room.roomNo}</span>
                 </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
+                <div className="text-xs text-gray-500 font-normal truncate">
+                  {room.roomType}
+                </div>
+              </div>
 
-      {/* Quick Booking Dialog */}
-      <Dialog open={isBookingDialogOpen} onOpenChange={setIsBookingDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>
-              Quick {bookingType === "reservation" ? "Reservation" : "Booking"}
-              {selectedDate && ` - ${format(selectedDate, "MMM dd, yyyy")}`}
-            </DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            <div className="flex gap-2">
-              <Button
-                variant={bookingType === "reservation" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setBookingType("reservation")}
-                className="flex-1"
+              {/* Timeline Cells */}
+              <div
+                className="col-start-2 col-span-full grid relative"
+                style={{
+                  gridTemplateColumns: `repeat(${VIEW_DAYS}, minmax(60px, 1fr))`,
+                }}
               >
-                Reservation
-              </Button>
-              <Button
-                variant={bookingType === "booking" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setBookingType("booking")}
-                className="flex-1"
-              >
-                Booking
-              </Button>
-            </div>
+                {/* Grid lines */}
+                {dateRange.map((date, dateIndex) => (
+                  <div
+                    key={date.toString()}
+                    className={cn(
+                      "border-r border-b border-gray-200",
+                      (dateIndex + 1) % 7 === 0 && "border-r-gray-400"
+                    )}
+                  />
+                ))}
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="guestName">Guest Name *</Label>
-                <Input
-                  id="guestName"
-                  value={quickBookingForm.guestName}
-                  onChange={(e) =>
-                    setQuickBookingForm((prev) => ({
-                      ...prev,
-                      guestName: e.target.value,
-                    }))
-                  }
-                  placeholder="Enter guest name"
-                />
+                {/* Render Bookings */}
+                {allBookings
+                  .filter((booking) => {
+                    const bookingRoomId =
+                      typeof booking.roomId === "object" &&
+                      booking.roomId !== null
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        ? (booking.roomId as any)._id.toString()
+                        : booking.roomId;
+                    return bookingRoomId === room._id?.toString();
+                  })
+                  .map((booking) => {
+                    const bookingStart = new Date(booking.stay.arrival);
+                    const bookingEnd = new Date(booking.stay.departure);
+
+                    if (
+                      !isWithinInterval(bookingStart, {
+                        start: subDays(startDate, 31),
+                        end: addDays(endDate, 31),
+                      })
+                    )
+                      return null;
+
+                    const visibleStart = max([bookingStart, startDate]);
+                    const visibleEnd = min([bookingEnd, endDate]);
+
+                    if (visibleStart > visibleEnd) return null;
+
+                    const startDayIndex = differenceInDays(
+                      visibleStart,
+                      startDate
+                    );
+                    const duration =
+                      differenceInDays(visibleEnd, visibleStart) + 1;
+                    const status = getBookingStatus(booking);
+
+                    const statusClasses = {
+                      [GUEST_STATUS.CHECKED_IN]:
+                        "bg-blue-500 hover:bg-blue-600",
+                      [GUEST_STATUS.CHECKED_OUT]: "bg-red-500 hover:bg-red-600",
+                      [GUEST_STATUS.RESERVED]:
+                        "bg-amber-400 hover:bg-amber-500",
+                      [GUEST_STATUS.CANCEL]: "bg-gray-400 hover:bg-gray-500",
+                    };
+
+                    return (
+                      <div
+                        key={booking._id}
+                        className={cn(
+                          "absolute h-full p-2 rounded-md text-white text-xs font-semibold flex items-center justify-center cursor-pointer transition-all duration-200 ease-in-out transform hover:scale-105 z-10",
+                          statusClasses[status] || "bg-gray-500"
+                        )}
+                        style={{
+                          gridColumnStart: startDayIndex + 1,
+                          gridColumnEnd: `span ${duration}`,
+                        }}
+                        title={`${booking.guest.name} (${format(
+                          bookingStart,
+                          "MMM d"
+                        )} - ${format(bookingEnd, "MMM d")})`}
+                      >
+                        <div className="flex flex-col items-center justify-center h-full text-center">
+                          <p className="truncate font-semibold">{booking.guest.name}</p>
+                          <p className="text-xs opacity-80 truncate">
+                            {format(bookingStart, "MMM d")} - {format(bookingEnd, "MMM d")}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                {/* Render Reservations */}
+                {allReservations
+                  .filter((res) => res.room.roomNo === room.roomNo)
+                  .map((reservation) => {
+                    const resStart = new Date(reservation.room.arrival);
+                    const resEnd = new Date(reservation.room.departure);
+
+                    if (
+                      !isWithinInterval(resStart, {
+                        start: subDays(startDate, 31),
+                        end: addDays(endDate, 31),
+                      })
+                    )
+                      return null;
+
+                    const visibleStart = max([resStart, startDate]);
+                    const visibleEnd = min([resEnd, endDate]);
+
+                    if (visibleStart > visibleEnd) return null;
+
+                    const startDayIndex = differenceInDays(
+                      visibleStart,
+                      startDate
+                    );
+                    const duration =
+                      differenceInDays(visibleEnd, visibleStart) + 1;
+
+                    return (
+                      <div
+                        key={reservation._id}
+                        className="absolute h-full p-2 rounded-md text-white text-xs font-semibold flex items-center justify-center cursor-pointer transition-all duration-200 ease-in-out transform hover:scale-105 z-10 bg-amber-400 hover:bg-amber-500 border-2 border-dashed border-white/50"
+                        style={{
+                          gridColumnStart: startDayIndex + 1,
+                          gridColumnEnd: `span ${duration}`,
+                        }}
+                        title={`${reservation.guest.name} (${format(
+                          resStart,
+                          "MMM d"
+                        )} - ${format(resEnd, "MMM d")})`}
+                      >
+                        <div className="flex flex-col items-center justify-center h-full text-center">
+                          <p className="truncate font-semibold">{reservation.guest.name}</p>
+                          <p className="text-xs opacity-80 truncate">
+                            {format(resStart, "MMM d")} - {format(resEnd, "MMM d")}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
               </div>
-
-              <div>
-                <Label htmlFor="guestPhone">Phone *</Label>
-                <Input
-                  id="guestPhone"
-                  value={quickBookingForm.guestPhone}
-                  onChange={(e) =>
-                    setQuickBookingForm((prev) => ({
-                      ...prev,
-                      guestPhone: e.target.value,
-                    }))
-                  }
-                  placeholder="Enter phone number"
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="room">Room *</Label>
-              <Select
-                value={quickBookingForm.roomId}
-                onValueChange={(value) =>
-                  setQuickBookingForm((prev) => ({ ...prev, roomId: value }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a room" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableRooms.map((room) => (
-                    <SelectItem
-                      key={room._id?.toString()}
-                      value={room._id?.toString() || ""}
-                    >
-                      {room.roomNo} - {room.roomType}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="arrival">Arrival Date *</Label>
-                <Input
-                  id="arrival"
-                  type="date"
-                  value={quickBookingForm.arrival}
-                  onChange={(e) =>
-                    setQuickBookingForm((prev) => ({
-                      ...prev,
-                      arrival: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="departure">Departure Date *</Label>
-                <Input
-                  id="departure"
-                  type="date"
-                  value={quickBookingForm.departure}
-                  onChange={(e) =>
-                    setQuickBookingForm((prev) => ({
-                      ...prev,
-                      departure: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="adults">Adults</Label>
-                <Input
-                  id="adults"
-                  type="number"
-                  min="1"
-                  value={quickBookingForm.adults}
-                  onChange={(e) =>
-                    setQuickBookingForm((prev) => ({
-                      ...prev,
-                      adults: parseInt(e.target.value) || 1,
-                    }))
-                  }
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="ota">Source</Label>
-                <Select
-                  value={quickBookingForm.ota}
-                  onValueChange={(value: OTAS) =>
-                    setQuickBookingForm((prev) => ({ ...prev, ota: value }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.values(OTAS).map((ota) => (
-                      <SelectItem key={ota} value={ota}>
-                        {ota}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="notes">Notes</Label>
-              <Textarea
-                id="notes"
-                value={quickBookingForm.notes}
-                onChange={(e) =>
-                  setQuickBookingForm((prev) => ({
-                    ...prev,
-                    notes: e.target.value,
-                  }))
-                }
-                placeholder="Additional notes..."
-                rows={3}
-              />
-            </div>
-
-            <div className="flex gap-2 pt-4">
-              <Button
-                variant="outline"
-                onClick={() => setIsBookingDialogOpen(false)}
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={() => quickBookingMutation.mutate(quickBookingForm)}
-                disabled={
-                  !quickBookingForm.guestName ||
-                  !quickBookingForm.guestPhone ||
-                  !quickBookingForm.roomId ||
-                  quickBookingMutation.isPending
-                }
-                className="flex-1"
-              >
-                {quickBookingMutation.isPending
-                  ? "Creating..."
-                  : `Create ${
-                      bookingType === "reservation" ? "Reservation" : "Booking"
-                    }`}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+            </React.Fragment>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
