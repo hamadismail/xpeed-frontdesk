@@ -167,7 +167,8 @@ export default function Reservation() {
       } else if (res?.status === 409) {
         // Conflict error - room already reserved/booked for selected dates
         toast.error("Reservation failed", {
-          description: res?.data?.message || "Room not available for selected dates",
+          description:
+            res?.data?.message || "Room not available for selected dates",
         });
       } else {
         toast.error("Reservation failed", {
@@ -543,86 +544,43 @@ export default function Reservation() {
                     )}
                   />
 
-                  {/* Arrival Date */}
-                  <FormField
-                    control={form.control}
-                    name="arrivalDate"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-col">
-                        <FormLabel>Arrivale Date *</FormLabel>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button
-                                variant={"outline"}
-                                className={cn(
-                                  "pl-3 text-left font-normal",
-                                  !field.value && "text-muted-foreground"
-                                )}
-                              >
-                                {field.value ? (
-                                  format(field.value, "PPP")
-                                ) : (
-                                  <span>Pick a date</span>
-                                )}
-                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent
-                            className="w-auto max-h-[280px] overflow-y-auto p-0"
-                            align="start"
-                          >
-                            <Calendar
-                              mode="single"
-                              selected={field.value}
-                              onSelect={field.onChange}
-                              // captionLayout="dropdown"
-                              disabled={[
-                                {
-                                  before: new Date(
-                                    new Date().setDate(new Date().getDate() + 1)
-                                  ),
-                                },
-                                {
-                                  from: reserveArrival,
-                                  to: reserveDeparture,
-                                },
-                              ]}
-                            />
-                          </PopoverContent>
-                        </Popover>
-                        <FormDescription className="sr-only">
-                          Your date is used.
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Departure Date */}
+                  {/* Stay Date */}
                   <FormField
                     control={form.control}
                     name="departureDate"
                     render={({ field }) => (
                       <FormItem className="flex flex-col">
-                        <FormLabel>Departure Date *</FormLabel>
+                        <FormLabel>Stay Date *</FormLabel>
                         <Popover>
                           <PopoverTrigger asChild>
                             <FormControl>
                               <Button
                                 variant={"outline"}
                                 className={cn(
-                                  "pl-3 text-left font-normal",
+                                  "flex justify-start pl-3 text-left font-normal",
                                   !field.value && "text-muted-foreground"
                                 )}
                               >
-                                {field.value ? (
-                                  format(field.value, "PPP")
+                                <CalendarIcon className="h-4 w-4 opacity-50" />
+                                {form.watch("arrivalDate") &&
+                                form.watch("departureDate") ? (
+                                  `${format(
+                                    form.getValues("arrivalDate"),
+                                    "MMM dd"
+                                  )} - ${format(
+                                    form.getValues("departureDate"),
+                                    "MMM dd, yyyy"
+                                  )}`
+                                ) : form.getValues("arrivalDate") ? (
+                                  `${format(
+                                    form.getValues("departureDate"),
+                                    "PPP"
+                                  )} - Select departure`
                                 ) : (
-                                  <span>Pick a date</span>
+                                  <span>
+                                    Select stay date
+                                  </span>
                                 )}
-                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                               </Button>
                             </FormControl>
                           </PopoverTrigger>
@@ -631,9 +589,21 @@ export default function Reservation() {
                             align="start"
                           >
                             <Calendar
-                              mode="single"
-                              selected={field.value}
-                              onSelect={field.onChange}
+                              mode="range"
+                              selected={{
+                                from: form.watch("arrivalDate"),
+                                to: form.watch("departureDate"),
+                              }}
+                              onSelect={(range) => {
+                                form.setValue(
+                                  "arrivalDate",
+                                  range?.from || new Date()
+                                );
+                                form.setValue(
+                                  "departureDate",
+                                  range?.to || new Date()
+                                );
+                              }}
                               // captionLayout="dropdown"
                               disabled={[
                                 {
@@ -919,10 +889,16 @@ export default function Reservation() {
                         form.getValues("discount") || "0"
                       ),
                       totalAmount: (() => {
-                        const bookingFee = parseFloat(form.getValues("bookingFee") || "0");
+                        const bookingFee = parseFloat(
+                          form.getValues("bookingFee") || "0"
+                        );
                         const sst = parseFloat(form.getValues("sst") || "0");
-                        const tourismTax = parseFloat(form.getValues("tourismTax") || "0");
-                        const discount = parseFloat(form.getValues("discount") || "0");
+                        const tourismTax = parseFloat(
+                          form.getValues("tourismTax") || "0"
+                        );
+                        const discount = parseFloat(
+                          form.getValues("discount") || "0"
+                        );
 
                         // Calculate SST as percentage of booking fee
                         const sstAmount = (bookingFee * sst) / 100;
@@ -944,4 +920,3 @@ export default function Reservation() {
     </div>
   );
 }
-

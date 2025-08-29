@@ -62,7 +62,7 @@ export default function BookRoomDialog({ room }: { room: IRoom }) {
   });
 
   const [stayInfo, setStayInfo] = useState({
-    arrival: undefined as Date | undefined,
+    arrival: new Date(),
     departure: undefined as Date | undefined,
     adults: 1,
     children: 1,
@@ -133,7 +133,7 @@ export default function BookRoomDialog({ room }: { room: IRoom }) {
       status: GUEST_STATUS.CHECKED_IN,
     });
     setStayInfo({
-      arrival: undefined,
+      arrival: new Date(),
       departure: undefined,
       adults: 1,
       children: 0,
@@ -367,30 +367,26 @@ export default function BookRoomDialog({ room }: { room: IRoom }) {
         {step === 2 && (
           <div className="grid gap-4">
             <div className="grid grid-cols-2 gap-4">
-              {/* stay date */}
+              {/* Check Out Date */}
               <div className="space-y-2">
-                <Label>Stay Dates *</Label>
+                <Label>CheckOut Date *</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
                       variant={"outline"}
                       className={cn(
                         "w-full justify-start text-left font-normal",
-                        !stayInfo.arrival &&
-                          !stayInfo.departure &&
-                          "text-muted-foreground"
+                        !stayInfo.departure && "text-muted-foreground"
                       )}
                     >
                       <Calendar className="mr-2 h-4 w-4" />
-                      {stayInfo.arrival && stayInfo.departure ? (
+                      {stayInfo.departure ? (
                         `${format(stayInfo.arrival, "MMM dd")} - ${format(
                           stayInfo.departure,
                           "MMM dd, yyyy"
                         )}`
-                      ) : stayInfo.arrival ? (
-                        `${format(stayInfo.arrival, "PPP")} - Select departure`
                       ) : (
-                        <span>Select arrival and departure dates</span>
+                        <span>Select Check Out Date</span>
                       )}
                     </Button>
                   </PopoverTrigger>
@@ -400,30 +396,24 @@ export default function BookRoomDialog({ room }: { room: IRoom }) {
                     side="right"
                   >
                     <DatePicker
-                      mode="range"
-                      selected={{
-                        from: stayInfo.arrival,
-                        to: stayInfo.departure,
-                      }}
-                      onSelect={(range) => {
-                        if (range?.from) {
-                          setStayInfo({
-                            ...stayInfo,
-                            arrival: range.from,
-                            departure: range.to,
-                          });
-                        }
+                      mode="single"
+                      selected={stayInfo.departure}
+                      onSelect={(date) => {
+                        setStayInfo({
+                          ...stayInfo,
+                          departure: date,
+                        });
                       }}
                       disabled={{
                         before: new Date(new Date().setHours(0, 0, 0, 0)),
                       }}
-                      numberOfMonths={2}
-                      defaultMonth={stayInfo.arrival || new Date()}
+                      defaultMonth={stayInfo.arrival}
                     />
                   </PopoverContent>
                 </Popover>
               </div>
 
+              {/* Adult Count */}
               <div className="space-y-2">
                 <Label>Adults</Label>
                 <Input
@@ -439,6 +429,7 @@ export default function BookRoomDialog({ room }: { room: IRoom }) {
                 />
               </div>
 
+              {/* Child Count */}
               <div className="space-y-2">
                 <Label>Children</Label>
                 <Input
