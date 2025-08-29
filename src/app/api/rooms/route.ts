@@ -23,12 +23,8 @@ export async function GET(request: Request) {
     .populate("guestId", "guest.name guest.status")
     .lean();
 
-  function formatDateToYMD(date: Date) {
-    return date.toLocaleDateString();
-  }
-
   // For rooms that are OCCUPIED, check if they should be DUE_OUT
-  const today = formatDateToYMD(new Date());
+  const today = new Date();
   // today.setHours(0, 0, 0, 0); // Set to start of day for comparison
 
   // Process rooms to update DUE_OUT status if needed
@@ -40,9 +36,7 @@ export async function GET(request: Request) {
         const booking = await Book.findById(room.guestId);
 
         if (booking && booking.stay?.departure) {
-          const departureDate = formatDateToYMD(
-            new Date(booking.stay.departure)
-          );
+          const departureDate = new Date(booking.stay.departure);
           // departureDate.setHours(0, 0, 0, 0);
           // console.log(today, "->", departureDate)
 
