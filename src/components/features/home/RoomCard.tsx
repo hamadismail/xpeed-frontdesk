@@ -8,6 +8,7 @@ import { Button } from "../../ui/button";
 import BookRoomDialog from "./bookroomdialog";
 import StayOver from "./stayover";
 import CheckOut from "./CheckOut";
+import { IReservation } from "@/src/types";
 
 type RoomCardProps = {
   roomStatus: RoomStatus;
@@ -16,6 +17,7 @@ type RoomCardProps = {
   guestStatus: string;
   arrival: Date;
   departure: Date;
+  allReservations: IReservation[];
 };
 
 export default function RoomCard({
@@ -25,6 +27,7 @@ export default function RoomCard({
   guestStatus,
   arrival,
   departure,
+  allReservations,
 }: RoomCardProps) {
   return (
     <Card
@@ -97,7 +100,7 @@ export default function RoomCard({
               <Clock className="h-4 w-4" />
               <span>Cancel</span>
             </Button>
-            <BookRoomDialog room={room} />
+            <BookRoomDialog room={room} allReservations={allReservations} />
           </>
         ) : (
           <>

@@ -212,6 +212,7 @@ export default function AllRooms() {
                 guestStatus={guestStatus}
                 arrival={arrival}
                 departure={departure}
+                allReservations={allReservations}
               />
             );
           })}

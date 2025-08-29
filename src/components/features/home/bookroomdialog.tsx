@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/src/components/ui/button";
 import {
   Dialog,
@@ -23,7 +23,7 @@ import { toast } from "sonner";
 import axios from "axios";
 import { IRoom } from "@/src/models/room.model";
 import { Calendar as DatePicker } from "@/src/components/ui/calendar";
-import { format } from "date-fns";
+import { format, isValid } from "date-fns";
 import {
   Popover,
   PopoverContent,
@@ -42,11 +42,25 @@ import { GUEST_STATUS, OTAS, PAYMENT_METHOD } from "@/src/models/book.model";
 import { getRoomIcon } from "@/src/utils/getRoomIcon";
 import { PaymentInvoice } from "../../layout/PaymentInvoice";
 import { useInvalidateBookingQueries } from "@/src/hooks/useQuery";
+import { IReservation } from "@/src/types";
 
-export default function BookRoomDialog({ room }: { room: IRoom }) {
+type BookRoomDialogProps = {
+  room: IRoom;
+  allReservations?: IReservation[];
+};
+
+export default function BookRoomDialog({
+  room,
+  allReservations,
+}: BookRoomDialogProps) {
   const invalidate = useInvalidateBookingQueries();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(1);
+
+  const isReserved =
+    allReservations?.filter((res) => res.room.roomNo === room.roomNo) ?? [];
+
+  const reserveGuest = isReserved[0];
 
   // Form State
   const [guestInfo, setGuestInfo] = useState({
@@ -56,14 +70,19 @@ export default function BookRoomDialog({ room }: { room: IRoom }) {
     country: "",
     passport: "",
     ic: "",
-    otas: OTAS.DEFAULT,
+    otas: reserveGuest?.guest?.ota || OTAS.DEFAULT,
     refId: "",
     status: GUEST_STATUS.CHECKED_IN,
   });
 
-  const [stayInfo, setStayInfo] = useState({
+  const [stayInfo, setStayInfo] = useState<{
+    arrival?: Date;
+    departure?: Date;
+    adults: number;
+    children: number;
+  }>({
     arrival: new Date(),
-    departure: undefined as Date | undefined,
+    departure: undefined,
     adults: 1,
     children: 1,
   });
@@ -77,6 +96,39 @@ export default function BookRoomDialog({ room }: { room: IRoom }) {
     paymentMethod: PAYMENT_METHOD.CASH,
     remarks: "",
   });
+
+  useEffect(() => {
+    if (reserveGuest) {
+      setGuestInfo({
+        name: reserveGuest.guest?.name || "",
+        email: reserveGuest.guest?.email || "",
+        phone: reserveGuest.guest?.phone || "",
+        country: reserveGuest.guest?.nationality || "",
+        passport: reserveGuest.guest?.passport || "",
+        ic: "",
+        otas: reserveGuest.guest?.ota || OTAS.DEFAULT,
+        refId: "",
+        status: GUEST_STATUS.CHECKED_IN,
+      });
+
+      setStayInfo((prev) => ({
+        ...prev,
+        departure: reserveGuest.room?.departure
+          ? new Date(reserveGuest.room.departure)
+          : prev.departure,
+      }));
+
+      setPaymentInfo({
+        roomPrice: reserveGuest.payment?.bookingFee?.toString() || "",
+        sst: reserveGuest.payment?.sst?.toString() || "",
+        tourismTax: reserveGuest.payment?.tourismTax?.toString() || "",
+        discount: reserveGuest.payment?.fnfDiscount?.toString() || "",
+        paidAmount: "",
+        paymentMethod: PAYMENT_METHOD.CASH,
+        remarks: "",
+      });
+    }
+  }, [reserveGuest]);
 
   const { mutate: bookRoom, isPending } = useMutation({
     mutationFn: async () => {
@@ -134,7 +186,7 @@ export default function BookRoomDialog({ room }: { room: IRoom }) {
     });
     setStayInfo({
       arrival: new Date(),
-      departure: undefined,
+      departure: new Date(),
       adults: 1,
       children: 0,
     });
@@ -380,11 +432,19 @@ export default function BookRoomDialog({ room }: { room: IRoom }) {
                       )}
                     >
                       <Calendar className="mr-2 h-4 w-4" />
-                      {stayInfo.departure ? (
+                      {stayInfo.arrival &&
+                      stayInfo.departure &&
+                      isValid(stayInfo.arrival) &&
+                      isValid(stayInfo.departure) ? (
                         `${format(stayInfo.arrival, "MMM dd")} - ${format(
                           stayInfo.departure,
                           "MMM dd, yyyy"
                         )}`
+                      ) : stayInfo.arrival && isValid(stayInfo.arrival) ? (
+                        `${format(
+                          stayInfo.arrival,
+                          "MMM dd"
+                        )} - Select Check Out Date`
                       ) : (
                         <span>Select Check Out Date</span>
                       )}
