@@ -7,11 +7,11 @@ import { Payment } from "@/src/models/payment.model";
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { guestId: string } }
+  { params }: { params: Promise<{ guestId: string }> }
 ): Promise<NextResponse> {
   try {
     await connectDB();
-    const { guestId } = params;
+    const { guestId } = await params;
 
     if (!guestId) {
       return NextResponse.json(
