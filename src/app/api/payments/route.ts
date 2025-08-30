@@ -58,14 +58,26 @@ export async function POST(request: Request) {
   try {
     await connectDB();
     const body = await request.json();
-    const { guestId, paymentDate, paymentMethod, paidAmount, paymentType } = body;
+    const { guestId, paymentDate, paymentMethod, paidAmount } = body;
+
+    // 1. Find the booking
+    const book = await Book.findById(guestId).populate("roomId");
+    if (!book) {
+      return NextResponse.json({ message: "Booking not found" }, { status: 404 });
+    }
+
+    const guestName = book.guest.name;
+    // Define a Room type for type safety
+    type RoomType = { roomNo: string };
+    const roomNo = (book.roomId as RoomType).roomNo;
 
     const newPayment = new Payment({
       guestId,
+      guestName,
+      roomNo,
       paymentDate,
       paymentMethod,
       paidAmount,
-      paymentType,
     });
 
     await newPayment.save();

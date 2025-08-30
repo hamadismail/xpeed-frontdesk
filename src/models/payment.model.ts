@@ -4,6 +4,8 @@ import { PAYMENT_METHOD } from "./book.model";
 export interface IPayment {
   _id?: string;
   guestId: Types.ObjectId;
+  guestName: string;
+  roomNo: string;
   paymentDate: Date;
   paymentMethod: PAYMENT_METHOD;
   paidAmount: number;
@@ -12,6 +14,8 @@ export interface IPayment {
 const paymentSchema = new Schema<IPayment>(
   {
     guestId: { type: Schema.Types.ObjectId, ref: "Book", required: true },
+    guestName: { type: String, required: true },
+    roomNo: { type: String, required: true },
     paymentDate: { type: Date, required: true },
     paymentMethod: {
       type: String,

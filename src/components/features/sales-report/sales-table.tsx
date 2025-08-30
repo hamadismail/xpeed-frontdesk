@@ -47,9 +47,8 @@ interface PaymentData {
 const columns: ColumnDef<IPayment>[] = [
   {
     accessorFn: (row) => {
-      const guestObj = row.guestId as { guest?: { name?: string }, roomId?: { roomNo?: string } };
-      const guestName = guestObj?.guest?.name || "N/A";
-      const roomNo = guestObj?.roomId?.roomNo || "";
+      const guestName = row.guestName || "N/A";
+      const roomNo = row.roomNo || "";
       return roomNo ? `${guestName} (Room ${roomNo})` : guestName;
     },
     header: "Guest Name",

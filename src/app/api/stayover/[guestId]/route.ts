@@ -65,13 +65,18 @@ export async function PATCH(
     }
 
     // Get the current document first
-    const currentBooking = await Book.findById(guestId);
+    const currentBooking = await Book.findById(guestId).populate("roomId");
     if (!currentBooking) {
       return NextResponse.json(
         { message: "Guest not found." },
         { status: 404 }
       );
     }
+
+    const guestName = currentBooking.guest.name;
+    // Define a type for roomId if not already defined
+    type RoomType = { roomNo: string };
+    const roomNo = (currentBooking.roomId as RoomType).roomNo;
 
     const updatedGuest = await Book.findByIdAndUpdate(
       guestId,
@@ -91,6 +96,8 @@ export async function PATCH(
     // Create a payment record
     await Payment.create({
       guestId: guestId,
+      guestName,
+      roomNo,
       paymentDate: new Date(),
       paymentMethod: bookingInfo.payment.paymentMethod,
       paidAmount: bookingInfo.payment.paidAmount,

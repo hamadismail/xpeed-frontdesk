@@ -62,32 +62,24 @@ export function DailySalesReport({
             </tr>
           </thead>
           <tbody>
-            {payments.map((payment) => {
-              const guestObj = payment.guestId as {
-                guest?: { name?: string };
-                roomId?: { roomNo?: string };
-              };
-              const guestName = guestObj?.guest?.name || "N/A";
-              const roomNo = guestObj?.roomId?.roomNo || "";
-              return (
-                <tr key={payment._id}>
-                  <td>{guestName}</td>
-                  <td>{roomNo}</td>
-                  <td>{format(new Date(payment.paymentDate), "PPP")}</td>
-                  <td>{payment.paymentMethod}</td>
-                  <td className="text-right">
-                    RM {payment.paidAmount.toFixed(2)}
-                  </td>
-                </tr>
-              );
-            })}
+            {payments.map((payment) => (
+              <tr key={payment._id}>
+                <td>{payment.guestName}</td>
+                <td>{payment.roomNo}</td>
+                <td>{format(new Date(payment.paymentDate), "PPP")}</td>
+                <td>{payment.paymentMethod}</td>
+                <td className="text-right">
+                  RM {payment.paidAmount.toFixed(2)}
+                </td>
+              </tr>
+            ))}
           </tbody>
           <tfoot>
             <tr>
-              <td colSpan={4} className="text-right font-bold py-4">
+              <td colSpan={4} className="text-right font-bold">
                 Total Sales
               </td>
-              <td className="text-right font-bold py-4">
+              <td className="text-right font-bold">
                 RM {totalSales.toFixed(2)}
               </td>
             </tr>

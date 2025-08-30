@@ -59,12 +59,18 @@ export async function POST(req: NextRequest) {
       roomId,
     });
 
+    const guestName = newBooking.guest.name;
+    const guestId = newBooking._id;
+    const roomNo = room.roomNo;
+
     // Create a payment record
     await Payment.create({
-      guestId: newBooking._id,
-      paymentDate: stay.arrival,
-      paymentMethod: payment.paymentMethod,
-      paidAmount: payment.paidAmount,
+      guestId: guestId,
+      guestName,
+      roomNo,
+      paymentDate: new Date(),
+      paymentMethod: bookingInfo.payment.paymentMethod,
+      paidAmount: bookingInfo.payment.paidAmount,
     });
 
     // Mark room as booked

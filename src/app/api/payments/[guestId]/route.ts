@@ -41,11 +41,21 @@ export async function PATCH(
         },
       },
       { new: true }
-    );
+    ).populate("roomId");
+
+    if (!updatedGuest) {
+      return NextResponse.json({ message: "Guest not found" }, { status: 404 });
+    }
+
+    const guestName = updatedGuest.guest.name;
+    type Room = { roomNo: string };
+    const roomNo = (updatedGuest.roomId as Room).roomNo;
 
     // Create a payment record
     await Payment.create({
       guestId: guestId,
+      guestName,
+      roomNo,
       paymentDate: new Date(),
       paymentMethod: payment.paymentMethod,
       paidAmount: payment.paidAmount,

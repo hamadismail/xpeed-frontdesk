@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/src/lib/mongoose";
 import { Payment } from "@/src/models/payment.model";
-import { Book } from "@/src/models/book.model";
 
 export async function GET(req: NextRequest) {
   try {
@@ -17,9 +16,7 @@ export async function GET(req: NextRequest) {
     const query: Record<string, unknown> = {};
 
     if (search) {
-      const guests = await Book.find({ "guest.name": { $regex: search, $options: "i" } }).select("_id");
-      const guestIds = guests.map(guest => guest._id);
-      query.guestId = { $in: guestIds };
+      query.guestName = { $regex: search, $options: "i" };
     }
 
     if (date) {
@@ -34,14 +31,6 @@ export async function GET(req: NextRequest) {
     }
 
     const payments = await Payment.find(query)
-      .populate({
-        path: "guestId",
-        select: "guest roomId",
-        populate: {
-          path: "roomId",
-          select: "roomNo",
-        },
-      })
       .sort({ paymentDate: -1 })
       .skip((page - 1) * limit)
       .limit(limit);
