@@ -36,23 +36,33 @@ export async function PATCH(
       );
     }
 
-    // 2. Find and Update Guest Status to "Checked Out"
-    const guest = await Book.findByIdAndUpdate(
-      updatedRoom?.guestId,
-      {
-        $set: {
-          "guest.status": status,
-          "guest.checkedOutAt": new Date(),
+    let guestActionResponse = null;
+    if (status === "CheckedOut") {
+      // 2. Find and Delete Booking
+      guestActionResponse = await Book.findByIdAndDelete(updatedRoom.guestId);
+
+      if (guestActionResponse) {
+        updatedRoom.guestId = null;
+        await updatedRoom.save();
+      }
+    } else {
+      // 2. Find and Update Guest Status
+      guestActionResponse = await Book.findByIdAndUpdate(
+        updatedRoom?.guestId,
+        {
+          $set: {
+            "guest.status": status,
+          },
         },
-      },
-      { new: true }
-    );
+        { new: true }
+      );
+    }
 
     return NextResponse.json({
       success: true,
       data: {
         room: updatedRoom,
-        guest: guest || { message: "No active guest found for this room" },
+        guest: guestActionResponse || { message: "No active guest action for this room" },
       },
     });
   } catch {

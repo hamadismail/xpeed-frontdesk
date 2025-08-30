@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useState } from "react";
 import { Button } from "@/src/components/ui/button";
@@ -11,14 +11,15 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/src/components/ui/dialog";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import axios from "axios";
 import { IRoom } from "@/src/models/room.model";
 import { BrushCleaning } from "lucide-react";
+import { useInvalidateBookingQueries } from "@/src/hooks/useQuery";
 
 export default function CleanRoomButton({ room }: { room: IRoom }) {
-  const queryClient = useQueryClient();
+  const invalidate = useInvalidateBookingQueries();
   const [open, setOpen] = useState(false);
 
   const { mutate: cleanRoomMutation, isPending } = useMutation({
@@ -28,7 +29,7 @@ export default function CleanRoomButton({ room }: { room: IRoom }) {
     },
     onSuccess: () => {
       toast.success("Room cleaned successfully!");
-      queryClient.invalidateQueries({ queryKey: ["rooms"] });
+      invalidate();
       setOpen(false);
     },
     onError: (error) => {
