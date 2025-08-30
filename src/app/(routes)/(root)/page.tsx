@@ -49,18 +49,23 @@ export default function AllRooms() {
       return (
         booking.roomId === room._id?.toString() &&
         arrival <= selected &&
-        departure > selected
+        departure >= selected
       );
     });
 
     // Check if room is reserved on selected date
     const isReserved = allReservations.some((reservation) => {
       const arrival = new Date(reservation.room.arrival).setHours(0, 0, 0, 0);
-      const departure = new Date(reservation.room.departure).setHours(0, 0, 0, 0);
+      const departure = new Date(reservation.room.departure).setHours(
+        0,
+        0,
+        0,
+        0
+      );
       return (
         reservation.room.roomNo === room.roomNo &&
         arrival <= selected &&
-        departure > selected
+        departure >= selected
       );
     });
 
@@ -71,6 +76,7 @@ export default function AllRooms() {
       (statusFilter === "all" ||
         (statusFilter === RoomStatus.AVAILABLE &&
           room.roomStatus !== RoomStatus.DUE_OUT &&
+          room.roomStatus !== RoomStatus.DIRTY &&
           !isReserved &&
           !isBooked) ||
         (statusFilter === RoomStatus.OCCUPIED && isBooked) ||
@@ -93,7 +99,7 @@ export default function AllRooms() {
       return (
         b.roomId === room._id?.toString() &&
         arrival <= selected &&
-        departure > selected
+        departure >= selected
       );
     });
 
@@ -104,31 +110,18 @@ export default function AllRooms() {
       return (
         r.room.roomNo === room.roomNo &&
         arrival <= selected &&
-        departure > selected
+        departure >= selected
       );
     });
 
     // Determine room status for selected date
-    let roomStatus = room.roomStatus;
+    let roomStatus = RoomStatus.AVAILABLE;
     let guestName = "";
     let guestStatus = "";
     let arrival = new Date();
     let departure = new Date();
 
-    if (room.roomStatus === RoomStatus.DIRTY) {
-      roomStatus = RoomStatus.DIRTY;
-    } else if (room.roomStatus === RoomStatus.DUE_OUT) {
-      roomStatus = RoomStatus.DUE_OUT;
-      const dueOutBooking = allBookings.find(
-        (b) => b.roomId === room._id?.toString()
-      );
-      if (dueOutBooking) {
-        guestName = dueOutBooking.guest.name;
-        guestStatus = "Due Out";
-        arrival = dueOutBooking.stay.arrival;
-        departure = dueOutBooking.stay.departure;
-      }
-    } else if (booking) {
+    if (booking) {
       roomStatus = RoomStatus.OCCUPIED;
       guestName = booking.guest.name;
       guestStatus = GUEST_STATUS.CHECKED_IN;
@@ -142,34 +135,54 @@ export default function AllRooms() {
       departure = reservation.room.departure;
     }
 
-    return { roomStatus, guestName, guestStatus, arrival, departure };
+    if (room.roomStatus === RoomStatus.DUE_OUT) {
+      roomStatus = RoomStatus.DUE_OUT;
+      const dueOutBooking = allBookings.find(
+        (b) => b.roomId === room._id?.toString()
+      );
+      if (dueOutBooking) {
+        guestName = dueOutBooking.guest.name;
+        guestStatus = "Due Out";
+      }
+    }
+
+    if (room.roomStatus === RoomStatus.DIRTY) {
+      roomStatus = RoomStatus.DIRTY;
+    }
+
+    return {
+      roomStatus,
+      guestName,
+      guestStatus,
+      arrival,
+      departure,
+      reservation,
+    };
   };
 
   // Count rooms by status for the selected date
   const selected = new Date(dateFilter).setHours(0, 0, 0, 0);
 
+  // const occupiedCount = allBookings.length;
   const occupiedCount = allBookings.filter((book) => {
     const arrival = new Date(book.stay.arrival).setHours(0, 0, 0, 0);
     const departure = new Date(book.stay.departure).setHours(0, 0, 0, 0);
-    return arrival <= selected && departure > selected;
+    return arrival <= selected && departure >= selected;
   }).length;
 
   const reservedCount = allReservations.filter((reservation) => {
     const arrival = new Date(reservation.room.arrival).setHours(0, 0, 0, 0);
     const departure = new Date(reservation.room.departure).setHours(0, 0, 0, 0);
-    return arrival <= selected && departure > selected;
+    return arrival <= selected && departure >= selected;
   }).length;
 
+  // Count due out rooms (rooms with DUE_OUT status)
   const dueOutCount = allRooms.filter(
     (room) => room.roomStatus === RoomStatus.DUE_OUT
   ).length;
 
-  const dirtyCount = allRooms.filter(
-    (room) => room.roomStatus === RoomStatus.DIRTY
-  ).length;
-
   const availableCount =
-    allRooms.length - occupiedCount - reservedCount - dueOutCount - dirtyCount;
+    allRooms.length - occupiedCount - reservedCount - dueOutCount;
 
   if (isLoading || reserveLoading || bookLoading) {
     return <LoadingSpiner />;
@@ -222,8 +235,14 @@ export default function AllRooms() {
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filteredRooms.map((room) => {
-            const { roomStatus, guestName, guestStatus, arrival, departure } =
-              roomInfo(room);
+            const {
+              roomStatus,
+              guestName,
+              guestStatus,
+              arrival,
+              departure,
+              reservation,
+            } = roomInfo(room);
             return (
               <RoomCard
                 key={room._id?.toString()}
@@ -234,6 +253,7 @@ export default function AllRooms() {
                 arrival={arrival}
                 departure={departure}
                 allReservations={allReservations}
+                reservation={reservation}
               />
             );
           })}

@@ -10,6 +10,7 @@ import StayOver from "./stayover";
 import CheckOut from "./CheckOut";
 import { IReservation } from "@/src/types";
 import CleanRoomButton from "./CleanRoomButton";
+import CancelReservationButton from "./CancelReservationButton";
 
 type RoomCardProps = {
   roomStatus: RoomStatus;
@@ -19,6 +20,7 @@ type RoomCardProps = {
   arrival: Date;
   departure: Date;
   allReservations: IReservation[];
+  reservation?: IReservation;
 };
 
 export default function RoomCard({
@@ -29,6 +31,7 @@ export default function RoomCard({
   arrival,
   departure,
   allReservations,
+  reservation,
 }: RoomCardProps) {
   return (
     <Card
@@ -99,10 +102,9 @@ export default function RoomCard({
           </>
         ) : roomStatus === RoomStatus.RESERVED ? (
           <>
-            <Button size="sm" variant="secondary" className="h-8 px-3 gap-1 ">
-              <Clock className="h-4 w-4" />
-              <span>Cancel</span>
-            </Button>
+            {reservation && reservation._id && (
+              <CancelReservationButton reservationId={reservation._id} />
+            )}
             <BookRoomDialog room={room} allReservations={allReservations} />
           </>
         ) : roomStatus === RoomStatus.DIRTY ? (

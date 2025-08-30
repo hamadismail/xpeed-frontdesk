@@ -30,6 +30,7 @@ export default function CheckOut({ room }: { room: IRoom }) {
     queryKey: ["books", room?.guestId?._id],
     queryFn: () =>
       axios.get(`/api/stayover/${room?.guestId?._id}`).then((res) => res.data),
+    enabled: !!room?.guestId?._id, // only fetch if guestId exists
   });
 
   const dueAmount = singleGuest?.payment?.dueAmount || 0;

@@ -1,7 +1,7 @@
 "use server";
 import { connectDB } from "@/src/lib/mongoose";
 import { Reservation } from "@/src/models/reservation.model";
-import { Room } from "@/src/models/room.model";
+import { Room, RoomStatus } from "@/src/models/room.model";
 import { Book } from "@/src/models/book.model";
 import { startSession } from "mongoose";
 import { NextRequest, NextResponse } from "next/server";
@@ -116,5 +116,47 @@ export async function GET(request: Request) {
     : reservation;
 
   return NextResponse.json(filteredReservation);
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    await connectDB();
+    const { reservationId } = await req.json();
+
+    if (!reservationId) {
+      return NextResponse.json(
+        { success: false, error: "Reservation ID is required" },
+        { status: 400 }
+      );
+    }
+
+    const deletedReservation = await Reservation.findByIdAndDelete(reservationId);
+
+    if (!deletedReservation) {
+      return NextResponse.json(
+        { success: false, error: "Reservation not found" },
+        { status: 404 }
+      );
+    }
+    
+    // Also update the room status to AVAILABLE
+    await Room.findOneAndUpdate(
+      { roomNo: deletedReservation.room.roomNo },
+      { roomStatus: RoomStatus.AVAILABLE, guestId: null }
+    );
+
+    return NextResponse.json({
+      success: true,
+      data: deletedReservation,
+    });
+  } catch (error) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: (error as Error).message,
+      },
+      { status: 500 }
+    );
+  }
 }
 
