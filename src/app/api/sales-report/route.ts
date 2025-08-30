@@ -34,7 +34,14 @@ export async function GET(req: NextRequest) {
     }
 
     const payments = await Payment.find(query)
-      .populate("guestId", "guest.name")
+      .populate({
+        path: "guestId",
+        select: "guest roomId",
+        populate: {
+          path: "roomId",
+          select: "roomNo",
+        },
+      })
       .sort({ paymentDate: -1 })
       .skip((page - 1) * limit)
       .limit(limit);

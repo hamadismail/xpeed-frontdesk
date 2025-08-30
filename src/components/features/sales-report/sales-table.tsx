@@ -28,6 +28,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
+import { DailySalesReport } from "./daily-sales-report";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/src/components/ui/dialog";
 
 interface PaymentData {
   data: IPayment[];
@@ -39,9 +47,10 @@ interface PaymentData {
 const columns: ColumnDef<IPayment>[] = [
   {
     accessorFn: (row) => {
-      // Assuming guestId is of type { guest?: { name?: string } }
-      const guestObj = row.guestId as { guest?: { name?: string } };
-      return guestObj?.guest?.name || "N/A";
+      const guestObj = row.guestId as { guest?: { name?: string }, roomId?: { roomNo?: string } };
+      const guestName = guestObj?.guest?.name || "N/A";
+      const roomNo = guestObj?.roomId?.roomNo || "";
+      return roomNo ? `${guestName} (Room ${roomNo})` : guestName;
     },
     header: "Guest Name",
   },
@@ -66,6 +75,8 @@ export function SalesTable() {
   const [search, setSearch] = useState("");
   const [date, setDate] = useState<Date | undefined>();
   const [paymentMethod, setPaymentMethod] = useState<string | undefined>();
+  const [showReport, setShowReport] = useState(false);
+  const [reportData, setReportData] = useState<IPayment[]>([]);
 
   const { data, isLoading } = useQuery<PaymentData>({
     queryKey: ["sales-report", page, search, date, paymentMethod],
@@ -76,6 +87,16 @@ export function SalesTable() {
       return data;
     },
   });
+
+  const fetchReportData = async () => {
+    if (date) {
+      const { data } = await axios.get("/api/sales-report", {
+        params: { date: date?.toISOString(), limit: 1000 }, // High limit to get all data for the day
+      });
+      setReportData(data.data);
+      setShowReport(true);
+    }
+  };
 
   const table = useReactTable({
     data: data?.data || [],
@@ -141,6 +162,19 @@ export function SalesTable() {
           >
             Clear Filters
           </Button>
+          <Dialog open={showReport} onOpenChange={setShowReport}>
+            <DialogTrigger asChild>
+              <Button onClick={fetchReportData} disabled={!date}>
+                Print Report
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="min-w-4xl max-h-[90vh] overflow-auto">
+              <DialogHeader>
+                <DialogTitle>Daily Sales Report</DialogTitle>
+              </DialogHeader>
+              {date && <DailySalesReport payments={reportData} reportDate={date} />}
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
       <div className="rounded-md border">
