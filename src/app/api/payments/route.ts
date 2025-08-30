@@ -1,5 +1,6 @@
 import { connectDB } from "@/src/lib/mongoose";
 import { Book, GUEST_STATUS } from "@/src/models/book.model";
+import { Payment } from "@/src/models/payment.model";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
@@ -49,5 +50,39 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error("Error fetching payments:", error);
     return NextResponse.json({ message: "Internal server error" });
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    await connectDB();
+    const body = await request.json();
+    const { guestId, paymentDate, paymentMethod, paidAmount, paymentType } = body;
+
+    const newPayment = new Payment({
+      guestId,
+      paymentDate,
+      paymentMethod,
+      paidAmount,
+      paymentType,
+    });
+
+    await newPayment.save();
+
+    // Update the guest's paid amount
+    await Book.findByIdAndUpdate(guestId, {
+      $inc: { "payment.paidAmount": paidAmount },
+    });
+
+    return NextResponse.json(
+      { message: "Payment created successfully" },
+      { status: 201 }
+    );
+  } catch (error) {
+    console.error("Error creating payment:", error);
+    return NextResponse.json(
+      { message: "Internal server error" },
+      { status: 500 }
+    );
   }
 }

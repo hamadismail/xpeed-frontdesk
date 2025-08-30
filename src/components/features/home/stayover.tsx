@@ -83,9 +83,7 @@ export default function StayOver({ room }: { room: IRoom }) {
             departure: stayInfo.departure,
           },
           payment: {
-            paidAmount:
-              (parseFloat(paymentInfo.paidAmount) || 0) +
-              (singleGuest?.payment?.paidAmount || 0),
+            paidAmount: parseFloat(paymentInfo.paidAmount) || 0,
             subtotal: calculateSubTotal(),
             dueAmount: calculateDue(),
             paymentMethod: paymentInfo.paymentMethod,

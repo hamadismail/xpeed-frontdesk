@@ -1,14 +1,17 @@
+"use server";
+
+import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/src/lib/mongoose";
 import { Book } from "@/src/models/book.model";
-import { NextRequest, NextResponse } from "next/server";
+import { Payment } from "@/src/models/payment.model";
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: Promise<{ guestId: string }> }
+  { params }: { params: { guestId: string } }
 ): Promise<NextResponse> {
   try {
     await connectDB();
-    const { guestId } = await params;
+    const { guestId } = params;
 
     if (!guestId) {
       return NextResponse.json(
@@ -20,19 +23,10 @@ export async function PATCH(
     const body = await req.json();
     const { payment } = body;
 
-    if (!payment) {
+    if (!payment?.paidAmount) {
       return NextResponse.json(
-        { message: "Invalid booking information." },
+        { message: "Invalid payment information." },
         { status: 400 }
-      );
-    }
-
-    // Get the current document first
-    const currentBooking = await Book.findById(guestId);
-    if (!currentBooking) {
-      return NextResponse.json(
-        { message: "Guest not found." },
-        { status: 404 }
       );
     }
 
@@ -40,19 +34,31 @@ export async function PATCH(
       guestId,
       {
         $set: {
-          "payment.paidAmount": payment.paidAmount,
           "payment.dueAmount": payment.dueAmount,
+        },
+        $inc: {
+          "payment.paidAmount": payment.paidAmount,
         },
       },
       { new: true }
     );
 
+    // Create a payment record
+    await Payment.create({
+      guestId: guestId,
+      paymentDate: new Date(),
+      paymentMethod: payment.paymentMethod,
+      paidAmount: payment.paidAmount,
+    });
+
     return NextResponse.json(updatedGuest, { status: 200 });
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } catch (error: any) {
-    console.error("Error updating guest:", error);
+  } catch (error: unknown) {
+    console.error("Error updating payment:", error);
     return NextResponse.json(
-      { message: "Internal server error.", error: error.message },
+      {
+        message: "Internal server error.",
+        error: error instanceof Error ? error.message : String(error),
+      },
       { status: 500 }
     );
   }

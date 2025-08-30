@@ -59,10 +59,9 @@ export default function PaymentModal({ guest }: { guest: IBook }) {
       }
       const payload = {
         payment: {
-          paidAmount:
-            (singleGuest?.payment.paidAmount || 0) +
-            Number(paymentInfo.paidAmount),
+          paidAmount: Number(paymentInfo.paidAmount),
           dueAmount: calculateDue(),
+          paymentMethod: paymentInfo.paymentMethod,
         },
       };
       const { data } = await axios.patch(`/api/payments/${guest._id}`, payload);

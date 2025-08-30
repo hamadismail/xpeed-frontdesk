@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/src/lib/mongoose";
 import { Book } from "@/src/models/book.model";
+import { Payment } from "@/src/models/payment.model";
 import { Types } from "mongoose";
 
 export async function GET(
@@ -76,16 +77,24 @@ export async function PATCH(
       guestId,
       {
         $set: {
-          // "stay.arrival": bookingInfo.stay.arrival,
           "stay.departure": bookingInfo.stay.departure,
           "payment.subtotal": bookingInfo.payment.subtotal,
-          "payment.discount": bookingInfo.payment.discount,
-          "payment.paidAmount": bookingInfo.payment.paidAmount,
           "payment.dueAmount": bookingInfo.payment.dueAmount,
+        },
+        $inc: {
+          "payment.paidAmount": bookingInfo.payment.paidAmount,
         },
       },
       { new: true }
     );
+
+    // Create a payment record
+    await Payment.create({
+      guestId: guestId,
+      paymentDate: new Date(),
+      paymentMethod: bookingInfo.payment.paymentMethod,
+      paidAmount: bookingInfo.payment.paidAmount,
+    });
 
     return NextResponse.json(updatedGuest, { status: 200 });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

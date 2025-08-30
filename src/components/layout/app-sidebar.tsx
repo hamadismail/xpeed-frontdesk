@@ -38,6 +38,11 @@ const navLinks = [
     href: "/payments",
     icon: <CreditCard className="h-5 w-5" />,
   },
+  {
+    label: "Sales Report",
+    href: "/sales-report",
+    icon: <CreditCard className="h-5 w-5" />,
+  },
 ];
 
 const secondaryLinks = [
