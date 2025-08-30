@@ -2,7 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 export const useInvalidateBookingQueries = () => {
   const queryClient = useQueryClient();
-  const keysToInvalidate = ["rooms", "book", "reserve"];
+  const keysToInvalidate = ["rooms", "book", "reserve", "payments"];
 
   const invalidate = () => {
     queryClient.invalidateQueries({

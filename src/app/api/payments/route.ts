@@ -1,6 +1,8 @@
 import { connectDB } from "@/src/lib/mongoose";
 import { Book, GUEST_STATUS } from "@/src/models/book.model";
 import { Payment } from "@/src/models/payment.model";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { Room } from "@/src/models/room.model";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {

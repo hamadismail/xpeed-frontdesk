@@ -12,16 +12,17 @@ import {
 } from "@/src/components/ui/dialog";
 import { Input } from "@/src/components/ui/input";
 import { DollarSign } from "lucide-react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import axios, { AxiosError } from "axios";
 import { Label } from "@/src/components/ui/label";
 import { IBook, PAYMENT_METHOD } from "@/src/models/book.model";
 // import { PaymentReceipt } from "@/src/components/layout/payment-receipt";
 import { PaymentInvoice } from "../../layout/PaymentInvoice";
+import { useInvalidateBookingQueries } from "@/src/hooks/useQuery";
 
 export default function PaymentModal({ guest }: { guest: IBook }) {
-  const queryClient = useQueryClient();
+  const invalidate = useInvalidateBookingQueries();
   const [open, setOpen] = useState(false);
   const [showReceipt, setShowReceipt] = useState(false);
   const [formErrors, setFormErrors] = useState({ paidAmount: "" });
@@ -69,7 +70,7 @@ export default function PaymentModal({ guest }: { guest: IBook }) {
     },
     onSuccess: () => {
       toast.success("Payment successful!");
-      queryClient.invalidateQueries({ queryKey: ["payments", "rooms"] });
+      invalidate();
       resetForm();
       setShowReceipt(true);
     },
@@ -306,7 +307,9 @@ export default function PaymentModal({ guest }: { guest: IBook }) {
                 Cancel
               </Button>
               <Button
-                onClick={() => {updateGuest()}}
+                onClick={() => {
+                  updateGuest();
+                }}
                 disabled={isPending || !paymentInfo.paidAmount}
                 className="gap-1"
               >
