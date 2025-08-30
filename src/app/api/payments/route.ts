@@ -1,8 +1,7 @@
 import { connectDB } from "@/src/lib/mongoose";
+import "@/src/models";
 import { Book, GUEST_STATUS } from "@/src/models/book.model";
 import { Payment } from "@/src/models/payment.model";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { Room } from "@/src/models/room.model";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
@@ -41,7 +40,7 @@ export async function GET(request: Request) {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(itemsPerPage)
-      .populate("roomId", "roomNo -_id")
+      .populate({ path: "roomId", model: "Room", select: "roomNo -_id" })
       .lean();
 
     return NextResponse.json({
