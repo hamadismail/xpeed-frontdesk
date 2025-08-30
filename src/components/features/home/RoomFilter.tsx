@@ -4,6 +4,7 @@ import { Input } from "../../ui/input";
 import {
   BedDouble,
   BedSingle,
+  BrushCleaning,
   Calendar,
   CheckCircle,
   Clock,
@@ -12,6 +13,7 @@ import {
   Layers,
   ListChecks,
   User2,
+
 } from "lucide-react";
 import {
   Select,
@@ -154,6 +156,7 @@ export default function RoomFilter({
               { value: RoomStatus.RESERVED, label: "Reserved", icon: Clock },
               { value: RoomStatus.OCCUPIED, label: "Occupied", icon: User2 },
               { value: RoomStatus.DUE_OUT, label: "Due Out", icon: User2 },
+              { value: RoomStatus.DIRTY, label: "Dirty", icon: BrushCleaning },
             ].map(({ value, label, icon: Icon }) => (
               <SelectItem
                 key={value}

@@ -8,35 +8,40 @@ type RoomBadgeProps = {
 };
 
 export default function RoomBadge({ roomStatus }: RoomBadgeProps) {
+  const statusConfig = {
+    [RoomStatus.AVAILABLE]: {
+      className: "bg-green-100 text-green-800 border-green-300",
+      text: "AVAILABLE",
+    },
+    [RoomStatus.RESERVED]: {
+      className: "bg-yellow-100 text-yellow-800 border-yellow-300",
+      text: "RESERVED",
+    },
+    [RoomStatus.DUE_OUT]: {
+      className: "bg-blue-100 text-blue-800 border-blue-300",
+      text: "DUE OUT",
+    },
+    [RoomStatus.OCCUPIED]: {
+      className: "bg-red-100 text-red-800 border-red-300",
+      text: "OCCUPIED",
+    },
+    [RoomStatus.DIRTY]: {
+      className: "bg-yellow-700 text-white",
+      text: "DIRTY",
+    },
+  };
+
+  const config = statusConfig[roomStatus] || {
+    className: "bg-gray-100 text-gray-800",
+    text: "UNKNOWN",
+  };
+
   return (
     <Badge
-      variant={
-        roomStatus === RoomStatus.AVAILABLE
-          ? "default"
-          : roomStatus === RoomStatus.RESERVED
-          ? "secondary"
-          : roomStatus === RoomStatus.DUE_OUT
-          ? "outline"
-          : "destructive"
-      }
-      className={`flex items-center gap-1 ${
-        roomStatus === RoomStatus.AVAILABLE
-          ? "bg-green-100 text-green-800 border-green-300"
-          : roomStatus === RoomStatus.RESERVED
-          ? "bg-yellow-100 text-yellow-800 border-yellow-300"
-          : roomStatus === RoomStatus.DUE_OUT
-          ? "bg-blue-100 text-blue-800 border-blue-300"
-          : ""
-      }`}
+      className={`flex items-center gap-1 ${config.className}`}
     >
       <Circle className="h-2 w-2 fill-current" />
-      {roomStatus === RoomStatus.OCCUPIED
-        ? "OCCUPIED"
-        : roomStatus === RoomStatus.RESERVED
-        ? "RESERVED"
-        : roomStatus === RoomStatus.DUE_OUT
-        ? "DUE OUT"
-        : "AVAILABLE"}
+      {config.text}
     </Badge>
   );
 }

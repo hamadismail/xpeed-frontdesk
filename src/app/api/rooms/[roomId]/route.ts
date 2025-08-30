@@ -14,13 +14,14 @@ export async function PATCH(
     const { status } = body;
 
     // 1. Update Room Status
-    // If guest is checking out, set room to AVAILABLE
+    // If guest is checking out, set room to DIRTY
     // If we're setting room to DUE_OUT, keep that status
-    const newRoomStatus = status === "CheckedOut"
-      ? RoomStatus.AVAILABLE
-      : status === "DueOut"
-      ? RoomStatus.DUE_OUT
-      : RoomStatus.AVAILABLE; // Default to AVAILABLE
+    const newRoomStatus =
+      status === "CheckedOut"
+        ? RoomStatus.DIRTY
+        : status === "DueOut"
+        ? RoomStatus.DUE_OUT
+        : RoomStatus.AVAILABLE; // Default to AVAILABLE
 
     const updatedRoom = await Room.findByIdAndUpdate(
       roomId,

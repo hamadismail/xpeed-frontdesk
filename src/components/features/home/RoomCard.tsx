@@ -9,6 +9,7 @@ import BookRoomDialog from "./bookroomdialog";
 import StayOver from "./stayover";
 import CheckOut from "./CheckOut";
 import { IReservation } from "@/src/types";
+import CleanRoomButton from "./CleanRoomButton";
 
 type RoomCardProps = {
   roomStatus: RoomStatus;
@@ -38,6 +39,8 @@ export default function RoomCard({
           ? "border-yellow-200 dark:border-yellow-900"
           : roomStatus === RoomStatus.DUE_OUT
           ? "border-blue-200 dark:border-blue-900"
+          : roomStatus === RoomStatus.DIRTY
+          ? "border-orange-200 dark:border-orange-900"
           : "border-red-200 dark:border-red-900"
       }`}
     >
@@ -102,6 +105,8 @@ export default function RoomCard({
             </Button>
             <BookRoomDialog room={room} allReservations={allReservations} />
           </>
+        ) : roomStatus === RoomStatus.DIRTY ? (
+          <CleanRoomButton room={room} />
         ) : (
           <>
             <StayOver room={room} />
